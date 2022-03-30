@@ -2,13 +2,20 @@
 
 ## Installation
 
+Just clone the repo and put the contents of the `site` directory somewhere in your web server directory.
+
+
+## Deprecated information
+
+This basically just explains, how I generated the obfuscated script in template.html.
+In case you are paranoid, you can reproduce the steps.
+Or if there is an important update to `fflate` or `ascii85`, I will have to run them again.
+
 Install with npm:
 
 ```bash
 npm install .
 ```
-
-### Create the decompression JavaScript
 
 First use rollup to only select the actually used code:
 

@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Page</title>
+</head>
+<body>
+    
+<script src="ascii85.js"></script>
+<script src="fflate.js"></script>
+
+<script>
+    const CODE_SHOW_DECOMPRESSED_DATA = 'window.onload = () => {const n = document.open("text/html", "replace");n.write(og_data);n.close()}';
+    // TODO: add a downlaod code that allows transfering arbitrary files within web pages
+
+    const encode_data = (text) => {
+        // first convert the string into a byte array
+        let enc = fflate.strToU8(text);
+
+        // then ZIP the byte array
+        enc = fflate.compressSync(enc);
+
+        // then encode the result using ASCII85
+        enc = ascii85.fromByteArray(enc);
+
+        // make the value a safe javascript string (assuming douple quotes are used)
+        enc = enc.replaceAll('"', "v");
+        enc = enc.replaceAll("\\", "w");
+        enc = enc.replaceAll("\n", "").replaceAll("\r", "");
+
+        // log the value for debugging purposes
+        console.log(enc);
+
+        return enc;
+    }
+
+    const set_download_data = (name, mime_type, data) => {
+        const fileBlob = new Blob([data], {type: mime_type});
+
+        const link = document.getElementById("download");
+        link.setAttribute("href", URL.createObjectURL(fileBlob));
+        link.setAttribute("download", name);
+    }
+
+    const create_page = (text) => {
+        document.getElementById("og_size").innerText = `${text.length} bytes`;
+
+        const enc = encode_data(text);
+
+        document.getElementById("enc_size").innerText = `${enc.length} bytes`;
+
+        console.log("[DEBUG] Onload handler triggered");
+        fetch("template.html").then(r => r.text()).then(template => {
+            const page = template.replace("{{DATA}}", enc).replace("{{CODE}}", CODE_SHOW_DECOMPRESSED_DATA);
+            document.getElementById("page_size").innerText = `${page.length} bytes`;
+
+            set_download_data("self_extract.html", "text/html", page);
+        });
+    }
+
+    window.addEventListener("load", () => {
+        let test_value = `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>New Contents</title>
+</head>
+<body>
+    <h1>Test</h1>
+    This is a test
+    ........................................
+
+</body>
+</html>`;
+        
+        create_page(test_value);
+    });
+</script>
+
+    <h1>Self Extracting Page Creator</h1>
+    <p>This web application allows you to create a self extracting web page.
+    Example usecases include...
+    <ul>
+        <li>... compressing a really big web page, so that it takes up less bandwith / storage.</li>
+        <li>... obfuscating potentially dangerous files, so that they do not immediately get flagged by security software.</li>
+        <li>... obfuscating data, so that it can not be found by using automated search tools like grep.</li>
+    </ul>
+</p>
+
+    TODO: file upload
+    <h2>Stats</h2>
+    <p>Original size: <span id="og_size">N/A</span></p>
+    <p>Encoded size: <span id="enc_size">N/A</span></p>
+    <p>Complete page size: <span id="page_size">N/A</span></p>
+
+
+    <h2>Result</h2>
+    Click here to download the <a id="download">self extracting page</a>
+</body>
+</html>
