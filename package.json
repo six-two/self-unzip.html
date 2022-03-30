@@ -1,0 +1,1 @@
+{"name":"self-unzip.html","dependencies":{"fflate":"^0.7.3","mkdirp":"^1.0.4","rollup":"^2.70.1","rollup-plugin-minify":"^1.0.3"},"devDependencies":{"@rollup/plugin-node-resolve":"^13.1.3"}}
