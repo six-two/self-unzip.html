@@ -1,0 +1,20 @@
+<script src="ascii85.js"></script>
+
+<script>
+    // TODO: strip down and combine ascii85 decode with gzip decompression (https://github.com/101arrowz/fflate) for a selfcontained selfunzipping file
+
+    debug = (name, value) => {
+        document.write(`<p>${name}: "${text}"</p>`)
+    }
+
+    let text = "This is some normal text ... test 123! Täßtör\x00abc"
+    debug("original", text);
+
+    let enc = ascii85.encode(text);
+    debug("encoded", enc);
+
+    let dec = ascii85.decode(enc+"hdfasgsdj");
+    debug("decoded", dec);
+
+    // debug("Decoded correctly?", text === dec);
+</script>
