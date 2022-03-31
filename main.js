@@ -123,8 +123,8 @@ decompress = (enc) => {
     dec = decompressSync(dec);
     log("after fflate", dec)
 
-    dec = strFromU8(dec);
-    log("output", dec)
+    // dec = strFromU8(dec);
+    // log("output", dec)
 
     return dec;
 }

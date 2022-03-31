@@ -13,7 +13,8 @@
 
 <script>
     const CODE_SHOW_DECOMPRESSED_DATA = 'window.onload = () => {const n = document.open("text/html", "replace");n.write(og_data);n.close()}';
-    // TODO: add a downlaod code that allows transfering arbitrary files within web pages
+    const CODE_DOWNLOAD_AS_FILE = 'const blob = new Blob([og_data], {type: "application/octet-stream"});const url = URL.createObjectURL(blob);document.body.innerHTML = `<a href="${url}" download="{{NAME}}">Download file</a>`';
+    // TODO: enable the user to select which mode to use
 
     let template;
     fetch("template.html").then(r => r.text()).then(text => {
@@ -36,7 +37,8 @@
 
     const encode_data = (text) => {
         // first convert the string into a byte array
-        let enc = fflate.strToU8(text);
+        // let enc = fflate.strToU8(text);
+        let enc = text;// if the input is bytes
 
         // then ZIP the byte array
         enc = fflate.compressSync(enc);
@@ -59,14 +61,15 @@
         link.setAttribute("download", name);
     }
 
-    const create_page = (text) => {
+    const create_page = (text, file_name) => {
         document.getElementById("og_size").innerText = `${text.length} bytes`;
 
         const c_data = encode_data(text);
         document.getElementById("enc_size").innerText = `${c_data.length} bytes`;
 
+        const code = replace_placeholder(CODE_DOWNLOAD_AS_FILE, "{{NAME}}", file_name);
         let page = template;
-        page = replace_placeholder(page, "{{CODE}}", CODE_SHOW_DECOMPRESSED_DATA);
+        page = replace_placeholder(page, "{{CODE}}", code);
         page = replace_placeholder(page, "{{DATA}}", c_data);
         console.log("Generated page");
         console.debug(page);
@@ -80,9 +83,10 @@
         input.addEventListener("change", () => { 
             const r = new FileReader();
             r.onload = () => {
-                create_page(r.result);
+                const bytes = new Uint8Array(r.result);
+                create_page(bytes, input.files[0].name);
             }
-            r.readAsText(input.files[0]);
+            r.readAsArrayBuffer(input.files[0]);
 
             for (id in ["og_size", "enc_size", "page_size"]) {
                 document.getElementById("enc_size").innerText = "N/A";
