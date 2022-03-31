@@ -15,6 +15,25 @@
     const CODE_SHOW_DECOMPRESSED_DATA = 'window.onload = () => {const n = document.open("text/html", "replace");n.write(og_data);n.close()}';
     // TODO: add a downlaod code that allows transfering arbitrary files within web pages
 
+    let template;
+    fetch("template.html").then(r => r.text()).then(text => {
+        console.log(`Received template file (${text.length} bytes)`);
+        console.debug(text);
+        template = text;
+    });
+
+    const replace_placeholder = (template, placeholder, contents) => {
+        // For some reason the normal string replace function fucks up on some pages.
+        // Plus this ensures, that the template has exactly one occurence of the placeholder.
+        const parts = template.split(placeholder);
+        if (parts.length == 2) {
+            return `${parts[0]}${contents}${parts[1]}`;
+        } else {
+            console.error(`Template contains ${parts.length - 1} instances of placeholder "${placeholder}", but expected exactly 1: "${template}"`);
+            return template;
+        }
+    };
+
     const encode_data = (text) => {
         // first convert the string into a byte array
         let enc = fflate.strToU8(text);
@@ -29,10 +48,6 @@
         enc = enc.replaceAll('"', "v");
         enc = enc.replaceAll("\\", "w");
         enc = enc.replaceAll("\n", "").replaceAll("\r", "");
-
-        // log the value for debugging purposes
-        console.log(enc);
-
         return enc;
     }
 
@@ -47,37 +62,32 @@
     const create_page = (text) => {
         document.getElementById("og_size").innerText = `${text.length} bytes`;
 
-        const enc = encode_data(text);
+        const c_data = encode_data(text);
+        document.getElementById("enc_size").innerText = `${c_data.length} bytes`;
 
-        document.getElementById("enc_size").innerText = `${enc.length} bytes`;
+        let page = template;
+        page = replace_placeholder(page, "{{CODE}}", CODE_SHOW_DECOMPRESSED_DATA);
+        page = replace_placeholder(page, "{{DATA}}", c_data);
+        console.log("Generated page");
+        console.debug(page);
+        document.getElementById("page_size").innerText = `${page.length} bytes`;
 
-        console.log("[DEBUG] Onload handler triggered");
-        fetch("template.html").then(r => r.text()).then(template => {
-            const page = template.replace("{{DATA}}", enc).replace("{{CODE}}", CODE_SHOW_DECOMPRESSED_DATA);
-            document.getElementById("page_size").innerText = `${page.length} bytes`;
-
-            set_download_data("self_extract.html", "text/html", page);
-        });
+        set_download_data("self_extract.html", "text/html", page);
     }
 
     window.addEventListener("load", () => {
-        let test_value = `<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>New Contents</title>
-</head>
-<body>
-    <h1>Test</h1>
-    This is a test
-    ........................................
+        const input = document.getElementById("file");
+        input.addEventListener("change", () => { 
+            const r = new FileReader();
+            r.onload = () => {
+                create_page(r.result);
+            }
+            r.readAsText(input.files[0]);
 
-</body>
-</html>`;
-        
-        create_page(test_value);
+            for (id in ["og_size", "enc_size", "page_size"]) {
+                document.getElementById("enc_size").innerText = "N/A";
+            }
+        });
     });
 </script>
 
@@ -91,7 +101,9 @@
     </ul>
 </p>
 
-    TODO: file upload
+    <h2>Input</h2>
+    <input type="file" id="file">
+
     <h2>Stats</h2>
     <p>Original size: <span id="og_size">N/A</span></p>
     <p>Encoded size: <span id="enc_size">N/A</span></p>

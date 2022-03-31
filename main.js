@@ -60,7 +60,7 @@ function toByteArray (text)
             case 0x7a: // z
                 if(tupleIndex != 0)
                 {
-                    throw new Exception("Unexpected 'z' character at position " + i);
+                    console.error("Unexpected 'z' character at position " + i);
                 }
 
                 for(let j = 0; j < 4; j++)
@@ -78,7 +78,7 @@ function toByteArray (text)
 
                 if(nextChar != '>')
                 {
-                    throw new Exception("Broken EOD at position " + j);
+                    console.error("Broken EOD at position " + j);
                 }
 
                 if(tupleIndex)
@@ -92,7 +92,7 @@ function toByteArray (text)
             default:
                 if(charCode < 0x21 || charCode > 0x75)
                 {
-                    throw new Exception("Unexpected character with code " + charCode + " at position " + i);
+                    console.error("Unexpected character with code " + charCode + " at position " + i);
                 }
 
                 tuple += (charCode - 0x21) * POW_85_4[tupleIndex++];
@@ -107,17 +107,24 @@ function toByteArray (text)
     return new Uint8Array(output);
 }
 
+
+// My code
+log = (name, value) => {
+    console.log(name);
+    console.debug(value);
+}
+
 decompress = (enc) => {
-    console.log("input", enc)
+    log("input", enc)
 
     dec = toByteArray(enc);
-    console.log("-ascii85", dec)
+    log("after ascii85", dec)
 
     dec = decompressSync(dec);
-    console.log("-zipped", dec)
+    log("after fflate", dec)
 
     dec = strFromU8(dec);
-    console.log("output", dec)
+    log("output", dec)
 
     return dec;
 }
