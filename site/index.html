@@ -12,9 +12,21 @@
 <script src="fflate.js"></script>
 
 <script>
-    const CODE_SHOW_DECOMPRESSED_DATA = 'window.onload = () => {const n = document.open("text/html", "replace");n.write(og_data);n.close()}';
-    const CODE_DOWNLOAD_AS_FILE = 'const blob = new Blob([og_data], {type: "application/octet-stream"});const url = URL.createObjectURL(blob);document.body.innerHTML = `<a href="${url}" download="{{NAME}}">Download file</a>`';
-    // TODO: enable the user to select which mode to use
+    const get_javascript_code = (page_type, file_name) => {
+        const decode_UTF8 = "const og_text=new TextDecoder().decode(og_data)";
+        if (page_type == "eval") {
+            return decode_UTF8 + ';console.debug(`Evaluating code:\n${og_text}`);eval(og_text)';
+        } else if (page_type == "replace") {
+            return decode_UTF8 + ';window.onload=()=>{let n=document.open("text/html","replace");n.write(og_text);n.close()}';
+        } else if (page_type == "download") {
+            return 'let b=new Blob([og_data],{type:"application/octet-stream"});let u=URL.createObjectURL(b);'
+                    + 'document.body.innerHTML=`<h1>Unpacked ' + file_name + '</h1><a href="${u}" download="' +
+                    file_name + '">Click here to download</a>`';
+        } else {
+            console.error("Unknown page type:", page_type);
+        }
+    }
+
 
     let template;
     fetch("template.html").then(r => r.text()).then(text => {
@@ -61,16 +73,18 @@
         link.setAttribute("download", name);
     }
 
-    const create_page = (text, file_name) => {
+    const create_page = (text, file_name, page_type) => {
         document.getElementById("og_size").innerText = `${text.length} bytes`;
 
         const c_data = encode_data(text);
         document.getElementById("enc_size").innerText = `${c_data.length} bytes`;
 
-        const code = replace_placeholder(CODE_DOWNLOAD_AS_FILE, "{{NAME}}", file_name);
+        const code = get_javascript_code(page_type, file_name)
+
         let page = template;
         page = replace_placeholder(page, "{{CODE}}", code);
         page = replace_placeholder(page, "{{DATA}}", c_data);
+
         console.log("Generated page");
         console.debug(page);
         document.getElementById("page_size").innerText = `${page.length} bytes`;
@@ -78,21 +92,46 @@
         set_download_data("self_extract.html", "text/html", page);
     }
 
+    const reset = () => {
+        for (id in ["og_size", "enc_size", "page_size"]) {
+            document.getElementById("enc_size").innerText = "N/A";
+        }
+    };
+    
+    let global_file_name, global_file_contents, global_page_type;
     window.addEventListener("load", () => {
         const input = document.getElementById("file");
         input.addEventListener("change", () => { 
             const r = new FileReader();
             r.onload = () => {
-                const bytes = new Uint8Array(r.result);
-                create_page(bytes, input.files[0].name);
+                global_file_contents = new Uint8Array(r.result);
+                rebuild_page();
             }
-            r.readAsArrayBuffer(input.files[0]);
-
+            global_file_name = input.files[0].name;
+            global_file_contents = null;
             for (id in ["og_size", "enc_size", "page_size"]) {
                 document.getElementById("enc_size").innerText = "N/A";
             }
+            r.readAsArrayBuffer(input.files[0]);
+            reset();
+        });
+
+        const page_type_selector = document.getElementById("page_type");
+        global_page_type = page_type_selector.value;
+        page_type_selector.addEventListener("change", () => {
+            global_page_type = page_type_selector.value;
+            rebuild_page();
         });
     });
+
+    const rebuild_page = () => {
+        reset();
+        if (!global_file_name || !global_file_contents) {
+            alert("Please upload a file first");
+        } else {
+            create_page(global_file_contents, global_file_name, global_page_type);
+        }
+    }
 </script>
 
     <h1>Self Extracting Page Creator</h1>
@@ -107,6 +146,16 @@
 
     <h2>Input</h2>
     <input type="file" id="file">
+
+    <p>
+        <label for="page_type">What should be done, when the content is decrypted?</label>
+
+        <select id="page_type">
+        <option value="eval">Execute contents as JavaScript</option>
+        <option value="replace" selected>Show contents as HTML page</option>
+        <option value="download">Download contents as a file</option>
+        </select>
+    </p>
 
     <h2>Stats</h2>
     <p>Original size: <span id="og_size">N/A</span></p>
