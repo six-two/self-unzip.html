@@ -1,13 +1,37 @@
 # self-unzip.html
 
+This repo contains tools to create self-extracting HTML pages.
+It works by taking a payload, compressing it, and encoding the results using ASCII85.
+It then puts the resulting string in a template file, that contains the code to decode and decompress the payload again.
+
+Currently there are three actions implemented, that can be executed, after the payload is decoded:
+
+- Execute payload as JavaScript code (example usecase: obfuscate malicious JS code)
+- Show payload as HTML page (example usecase: compress a big web page)
+- Download the payload as a file (example usecase: bypass antivirus / filters)
+
+## Demo
+
+You can try the online demo at [self-extracting-html.six-two.dev](https://self-extracting-html.six-two.dev/).
+This version is the same as the web version described below.
+It is entirely client-site, your files do not get uploaded to a server.
+
 ## Installation
 
-Just clone the repo and put the contents of the `site` directory somewhere in your web server directory.
+### Web version
+
+There is a bare-bones page generator written in plain HTML and JavaScript.
+To use it, just clone the repo and put the contents of the `site` directory somewhere in your web server directory.
+
+### Python version
+
+A Python script to generate self extracting web pages is under `python/main.py`.
+It just requires a modern Python version (probably Python3.8+) and has no external dependencies.
 
 
 ## Deprecated information
 
-This basically just explains, how I generated the obfuscated script in template.html.
+This basically just explains, how I generated the obfuscated script in `template.html`.
 In case you are paranoid, you can reproduce the steps.
 Or if there is an important update to `fflate` or `ascii85`, I will have to run them again.
 
