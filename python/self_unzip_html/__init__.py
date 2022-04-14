@@ -6,8 +6,7 @@ import os
 import sys
 
 SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
-REPO_ROOT = os.path.join(SCRIPT_DIR, "..")
-TEMPLATE_FILE = os.path.join(REPO_ROOT, "site", "template.html")
+DEFAULT_TEMPLATE_FILE = os.path.join(SCRIPT_DIR, "template.html")
 
 JS_EVAL = "const og_text=new TextDecoder().decode(og_data);console.debug(`Evaluating code:\n${og_text}`);eval(og_text)"
 JS_REPLACE = 'const og_text=new TextDecoder().decode(og_data);window.onload=()=>{let n=document.open("text/html","replace");n.write(og_text);n.close()}'
@@ -32,9 +31,12 @@ def encode_bytes(file_bytes: bytes) -> str:
     return file_bytes.decode("utf-8")
 
 
-def create_page(input_file: str, java_script: str):
-    with open(TEMPLATE_FILE, "r") as f:
-        template = f.read()
+def create_page(input_file: str, template_file: str, java_script: str):
+    try:
+        with open(template_file, "r") as f:
+            template = f.read()
+    except:
+        raise Exception(f"Failed to load template file '{template_file}'. Try specifying a different file with the --template option")
 
     with open(input_file, "rb") as f:
         file_contents = f.read()
@@ -48,13 +50,16 @@ def create_page(input_file: str, java_script: str):
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("file", help="the file to encode")
-    ap.add_argument("-o", "--output", nargs="?", help="the location to write the output to. If not specified stdout will be used instead")
-    ap.add_argument("-t", "--type", nargs="?", default="replace", choices=["download", "eval", "replace"], help="the output type")
+    ap.add_argument("-o", "--output", help="the location to write the output to. If not specified stdout will be used instead")
+    ap.add_argument("-t", "--type", default="replace", choices=["download", "eval", "replace"], help="the output type")
+    ap.add_argument("--template", help="use this template file instead of the default one")
     args = ap.parse_args()
 
+    template_file = args.template or DEFAULT_TEMPLATE_FILE
     file_name = os.path.basename(args.file)
     java_script = get_javascript(args.type, file_name)
-    html_page = create_page(args.file, java_script)
+
+    html_page = create_page(args.file, template_file, java_script)
 
     if args.output:
         with open(args.output, "w") as f:

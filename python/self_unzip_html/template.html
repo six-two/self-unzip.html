@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Self Extracting Page</title>
+</head>
+<body>
+    <h1>Unpacking...</h1>
+    <p>If you can read this, the extraction probably did not work.
+    Please disable plugins (such as NoScript), which may block this page from running the extraction code.</p>
+    <p>If you have some experience with HTML, open your browsers console and and check what the eroor message says.
+    Maybe it's easily fixable ;)</p>
+
+    <script>
+    // Contains minified code from:
+    // - https://github.com/101arrowz/fflate, MIT License, Copyright (c) 2020 Arjun Barrett
+    // - https://github.com/nE0sIghT/ascii85.js, MIT License, Copyright (C) 2018  Yuri Konotopov (Юрий Конотопов) <ykonotopov@gnome.org>
+    (function(){function S(a,c=4){let b=new Uint8Array(c);for(let e=0;e<c;e++)b[e]=a>>T[e]&255;return b}function U(a){function c(){let d=S(g,p-1);for(let h=0;h<d.length;h++)b.push(d[h]);g=p=0}let b=[];var e=!1;let g=0,p=0,q=a.startsWith("<~")&&2<a.length?2:0;do if(0!==a.charAt(q).trim().length){var m=a.charCodeAt(q);switch(m){case 122:0!=p&&console.error("Unexpected 'z' character at position "+q);for(m=0;4>m;m++)b.push(0);break;case 126:e="";for(m=q+1;m<a.length&&0==e.trim().length;)e=a.charAt(m++);">"!=
+    e&&console.error("Broken EOD at position "+m);p&&(g+=L[p-1],c());e=!0;break;default:(33>m||117<m)&&console.error("Unexpected character with code "+m+" at position "+q),g+=(m-33)*L[p++],5<=p&&c()}}while(q++<a.length&&!e);return new Uint8Array(b)}var r=Uint8Array,C=Uint16Array,M=Uint32Array,N=new r([0,0,0,0,0,0,0,0,1,1,1,1,2,2,2,2,3,3,3,3,4,4,4,4,5,5,5,5,0,0,0,0]),O=new r([0,0,0,0,1,1,2,2,3,3,4,4,5,5,6,6,7,7,8,8,9,9,10,10,11,11,12,12,13,13,0,0]),V=new r([16,17,18,0,8,7,9,6,10,5,11,4,12,3,13,2,14,1,
+    15]),k=function(a,c){for(var b=new C(31),e=0;31>e;++e)b[e]=c+=1<<a[e-1];a=new M(b[30]);for(e=1;30>e;++e)for(c=b[e];c<b[e+1];++c)a[c]=c-b[e]<<5|e;return[b,a]},l=k(N,2),P=l[0];l=l[1];P[28]=258;l[258]=28;var W=k(O,0)[0],F=new C(32768);for(k=0;32768>k;++k)l=(k&43690)>>>1|(k&21845)<<1,l=(l&52428)>>>2|(l&13107)<<2,l=(l&61680)>>>4|(l&3855)<<4,F[k]=((l&65280)>>>8|(l&255)<<8)>>>1;var D=function(a,c,b){for(var e=a.length,g=0,p=new C(c);g<e;++g)a[g]&&++p[a[g]-1];var q=new C(c);for(g=0;g<c;++g)q[g]=q[g-1]+p[g-
+    1]<<1;if(b)for(b=new C(1<<c),p=15-c,g=0;g<e;++g){if(a[g]){var m=g<<4|a[g],d=c-a[g],h=q[a[g]-1]++<<d;for(d=h|(1<<d)-1;h<=d;++h)b[F[h]>>>p]=m}}else for(b=new C(e),g=0;g<e;++g)a[g]&&(b[g]=F[q[a[g]-1]++]>>>15-a[g]);return b};l=new r(288);for(k=0;144>k;++k)l[k]=8;for(k=144;256>k;++k)l[k]=9;for(k=256;280>k;++k)l[k]=7;for(k=280;288>k;++k)l[k]=8;var Q=new r(32);for(k=0;32>k;++k)Q[k]=5;var X=D(l,9,1),Y=D(Q,5,1),G=function(a){for(var c=a[0],b=1;b<a.length;++b)a[b]>c&&(c=a[b]);return c},v=function(a,c,b){var e=
+    c/8|0;return(a[e]|a[e+1]<<8)>>(c&7)&b},H=function(a,c){var b=c/8|0;return(a[b]|a[b+1]<<8|a[b+2]<<16)>>(c&7)},Z=function(a,c,b){if(null==c||0>c)c=0;if(null==b||b>a.length)b=a.length;var e=new (2==a.BYTES_PER_ELEMENT?C:4==a.BYTES_PER_ELEMENT?M:r)(b-c);e.set(a.subarray(c,b));return e},aa=["unexpected EOF","invalid block type","invalid length/literal","invalid distance","stream finished","no stream handler",,"no callback","invalid UTF-8 data","extra field too long","date not in range 1980-2099","filename too long",
+    "stream finishing","invalid zip data"],w=function(a,c,b){c=Error(c||aa[a]);c.code=a;Error.captureStackTrace&&Error.captureStackTrace(c,w);if(!b)throw c;return c},K=function(a,c,b){var e=a.length;if(!e||b&&b.f&&!b.l)return c||new r(0);var g=!c||b,p=!b||b.i;b||={};c||=new r(3*e);var q=function(E){var R=c.length;E>R&&(E=new r(Math.max(2*R,E)),E.set(c),c=E)},m=b.f||0,d=b.p||0,h=b.b||0,t=b.l,y=b.d,z=b.m,x=b.n,I=8*e;do{if(!t){m=v(a,d,1);var f=v(a,d+1,3);d+=3;if(f)if(1==f)t=X,y=Y,z=9,x=5;else if(2==f){z=
+    v(a,d,31)+257;y=v(a,d+10,15)+4;t=z+v(a,d+5,31)+1;d+=14;x=new r(t);var n=new r(19);for(f=0;f<y;++f)n[V[f]]=v(a,d+3*f,7);d+=3*y;f=G(n);y=(1<<f)-1;var J=D(n,f,1);for(f=0;f<t;)if(n=J[v(a,d,y)],d+=n&15,u=n>>>4,16>u)x[f++]=u;else{var B=n=0;16==u?(B=3+v(a,d,3),d+=2,n=x[f-1]):17==u?(B=3+v(a,d,7),d+=3):18==u&&(B=11+v(a,d,127),d+=7);for(;B--;)x[f++]=n}t=x.subarray(0,z);f=x.subarray(z);z=G(t);x=G(f);t=D(t,z,1);y=D(f,x,1)}else w(1);else{var u=((d+7)/8|0)+4;d=a[u-4]|a[u-3]<<8;f=u+d;if(f>e){p&&w(0);break}g&&q(h+
+    d);c.set(a.subarray(u,f),h);b.b=h+=d;b.p=d=8*f;b.f=m;continue}if(d>I){p&&w(0);break}}g&&q(h+131072);u=(1<<z)-1;J=(1<<x)-1;for(B=d;;B=d){n=t[H(a,d)&u];f=n>>>4;d+=n&15;if(d>I){p&&w(0);break}n||w(2);if(256>f)c[h++]=f;else if(256==f){B=d;t=null;break}else{n=f-254;if(264<f){f-=257;var A=N[f];n=v(a,d,(1<<A)-1)+P[f];d+=A}f=y[H(a,d)&J];A=f>>>4;f||w(3);d+=f&15;f=W[A];3<A&&(A=O[A],f+=H(a,d)&(1<<A)-1,d+=A);if(d>I){p&&w(0);break}g&&q(h+131072);for(n=h+n;h<n;h+=4)c[h]=c[h-f],c[h+1]=c[h+1-f],c[h+2]=c[h+2-f],c[h+
+    3]=c[h+3-f];h=n}}b.l=t;b.p=B;b.b=h;b.f=m;t&&(m=1,b.m=z,b.d=y,b.n=x)}while(!m);return h==c.length?c:Z(c,0,h)};k=new r(0);l="undefined"!=typeof TextDecoder&&new TextDecoder;try{l.decode(k,{stream:!0})}catch(a){}const T=[24,16,8,0],L=[52200625,614125,7225,85,1];log=(a,c)=>{console.log(a);console.debug(c)};decompress=a=>{log("input",a);dec=U(a);log("after ascii85",dec);a=dec;if(31==a[0]&&139==a[1]&&8==a[2]){var c=a.subarray;31==a[0]&&139==a[1]&&8==a[2]||w(6,"invalid gzip data");var b=a[3],e=10;b&4&&(e+=
+    a[10]|(a[11]<<8)+2);for(var g=(b>>3&1)+(b>>4&1);0<g;g-=!a[e++]);c=c.call(a,e+(b&2),-8);b=a.length;a=K(c,new r((a[b-4]|a[b-3]<<8|a[b-2]<<16|a[b-1]<<24)>>>0))}else 8!=(a[0]&15)||7<a[0]>>4||(a[0]<<8|a[1])%31?a=K(a,void 0):((8!=(a[0]&15)||7<a[0]>>>4||(a[0]<<8|a[1])%31)&&w(6,"invalid zlib data"),a[1]&32&&w(6,"invalid zlib data: preset dictionaries not supported"),a=K(a.subarray(2,-4),void 0));dec=a;log("after fflate",dec);return dec}})();
+
+    // My code (c) six-two, MIT License
+    const c_data = "{{DATA}}";
+    const og_data = decompress(c_data.replaceAll("v", '"').replaceAll("w", "\\"));
+    {{CODE}}
+    </script>
+</body>
+</html>
