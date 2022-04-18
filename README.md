@@ -1,6 +1,9 @@
 # self-unzip.html
+[![PyPI version](https://img.shields.io/pypi/v/self-unzip-html)](https://pypi.org/project/self-unzip-html/)
+![License](https://img.shields.io/pypi/l/self-unzip-html)
+![Python versions](https://img.shields.io/pypi/pyversions/self-unzip-html)
 
-This repo contains tools to create self-extracting HTML pages.
+This [repo](https://github.com/six-two/self-unzip.html) contains tools to create self-extracting HTML pages.
 It works by taking a payload, compressing it, and encoding the results using ASCII85.
 It then puts the resulting string in a template file, that contains the code to decode and decompress the payload again.
 
@@ -26,10 +29,16 @@ To use it, just clone the repo and put the contents of the `site` directory some
 ### Python version
 
 A Python script to generate self extracting web pages is under `python/main.py`.
-It just requires a modern Python version (probably Python3.8+) and has no external dependencies.
+It just requires a modern Python version (probably Python3.9+) and has no external dependencies.
+
+You can also install it with `pip`:
+
+```
+python3 -m pip install self-unzip-html
+```
 
 
-## Deprecated information
+## template.html
 
 This basically just explains, how I generated the obfuscated script in `template.html`.
 In case you are paranoid, you can reproduce the steps.
