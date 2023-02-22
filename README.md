@@ -26,6 +26,11 @@ It is entirely client-site, your files do not get uploaded to a server.
 There is a bare-bones page generator written in plain HTML and JavaScript.
 To use it, just clone the repo and put the contents of the `site` directory somewhere in your web server directory.
 
+You can of course also use it with Python's built in web server:
+```bash
+python3 -m http.server --directory ./site/
+```
+
 ### Python version
 
 A Python script to generate self extracting web pages is under `python/main.py`.
@@ -33,8 +38,13 @@ It just requires a modern Python version (probably Python3.9+) and has no extern
 
 You can also install it with `pip`:
 
+```bash
+python3 -m pip install -U self-unzip-html
 ```
-python3 -m pip install self-unzip-html
+
+Example usage of the pip package:
+```bash
+self-unzip-html.py -t download -o psexec.html ~/Downloads/SysinternalsSuite/PsExec.exe
 ```
 
 

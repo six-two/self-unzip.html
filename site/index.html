@@ -4,12 +4,24 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Create Page</title>
+    <title>Self Extracting Page Creator</title>
 </head>
 <body>
-    
+
 <script src="ascii85.js"></script>
 <script src="fflate.js"></script>
+
+<style>
+    table, th, td {
+        border: 1px solid black;
+        border-collapse: collapse;
+        padding: 5px;
+    }
+
+    .steps li {
+        margin-bottom: 20px;
+    }
+</style>
 
 <script>
     const get_javascript_code = (page_type, file_name) => {
@@ -89,18 +101,37 @@
         console.debug(page);
         document.getElementById("page_size").innerText = `${page.length} bytes`;
 
-        set_download_data("self_extract.html", "text/html", page);
+        // "." (dot) is intentially maked as bad
+        let sanitized_file_name = file_name.replaceAll(/[^a-z0-9-_]/ig, "_");
+        // Remove underscores at the beginning or the end
+        sanitized_file_name = sanitized_file_name.replaceAll(/(^_+|_+$)/g, "");
+        // Remove duplicate underscores
+        sanitized_file_name = sanitized_file_name.replaceAll(/__+/g, "");
+
+        set_download_data(`${sanitized_file_name}.html`, "text/html", page);
+    }
+
+    const download_not_ready = () => {
+        if (!global_file_name || !global_file_contents) {
+            alert("Please upload a file first");
+        } else {
+            alert("File not ready. Either you click very fast/uploaded a huge file, or the application crashed. Please check your browser's console for errors and report them on Github (linked on the page).");
+        }
     }
 
     const reset = () => {
-        for (id in ["og_size", "enc_size", "page_size"]) {
-            document.getElementById("enc_size").innerText = "N/A";
+        for (id of ["og_size", "enc_size", "page_size"]) {
+            document.getElementById(id).innerText = "N/A";
         }
+        const dl = document.getElementById("download");
+        dl.removeAttribute("download");
+        dl.href="javascript:download_not_ready()";
     };
     
     let global_file_name, global_file_contents, global_page_type;
     window.addEventListener("load", () => {
         const input = document.getElementById("file");
+        input.value = "";// need to reset it on page reload, since it otherwise looks as if it has a value
         input.addEventListener("change", () => { 
             const r = new FileReader();
             r.onload = () => {
@@ -109,11 +140,9 @@
             }
             global_file_name = input.files[0].name;
             global_file_contents = null;
-            for (id in ["og_size", "enc_size", "page_size"]) {
-                document.getElementById("enc_size").innerText = "N/A";
-            }
-            r.readAsArrayBuffer(input.files[0]);
             reset();
+
+            r.readAsArrayBuffer(input.files[0]);
         });
 
         const page_type_selector = document.getElementById("page_type");
@@ -122,13 +151,16 @@
             global_page_type = page_type_selector.value;
             rebuild_page();
         });
+
+        reset();
     });
 
     const rebuild_page = () => {
         reset();
         if (!global_file_name || !global_file_contents) {
-            alert("Please upload a file first");
+            log("Please upload a file first");
         } else {
+            reset();
             create_page(global_file_contents, global_file_name, global_page_type);
         }
     }
@@ -142,28 +174,45 @@
         <li>... obfuscating potentially dangerous files, so that they do not immediately get flagged by security software.</li>
         <li>... obfuscating data, so that it can not be found by using automated search tools like grep.</li>
     </ul>
+    You can find the source code and report issues on <a href="https://github.com/six-two/self-unzip.html">Github</a>.
 </p>
 
     <h2>Input</h2>
-    <input type="file" id="file">
+    <ol class="steps">
+        <li>
+            Choose the file to compress:<br>
+            <input type="file" id="file">
+        </li>
+        <li>
+            <label for="page_type">What should be done, when the content is decrypted?<br></label>
 
-    <p>
-        <label for="page_type">What should be done, when the content is decrypted?</label>
-
-        <select id="page_type">
-        <option value="eval">Execute contents as JavaScript</option>
-        <option value="replace" selected>Show contents as HTML page</option>
-        <option value="download">Download contents as a file</option>
-        </select>
-    </p>
+            <select id="page_type">
+            <option value="eval">Execute contents as JavaScript</option>
+            <option value="replace">Show contents as HTML page</option>
+            <option value="download" selected>Download contents as a file</option>
+            </select>
+        </li>
+        <li id="result-step"><a id="download">Download result</a></li>
+        <li>
+            Repeat the above steps for each file you want.<br>
+            Tip: If you have a lot of files to process, use the <a href="https://github.com/six-two/self-unzip.html#python-version">Python tool</a>.
+        </li>
+    </ol>
 
     <h2>Stats</h2>
-    <p>Original size: <span id="og_size">N/A</span></p>
-    <p>Encoded size: <span id="enc_size">N/A</span></p>
-    <p>Complete page size: <span id="page_size">N/A</span></p>
-
-
-    <h2>Result</h2>
-    Click here to download the <a id="download">self extracting page</a>
+    <table>
+        <tr>
+            <td>Input size</td>
+            <td><span id="og_size">N/A</span></td>
+        </tr>
+        <tr>
+            <td>Encoded input size</td>
+            <td><span id="enc_size">N/A</span></td>
+        </tr>
+        <tr>
+            <td>Output size</td>
+            <td><span id="page_size">N/A</span></td>
+        </tr>
+    </table>
 </body>
 </html>
