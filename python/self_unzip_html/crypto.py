@@ -1,31 +1,39 @@
 #!/usr/bin/env python3
+# This is the python implementation of my modified aes4js.js.
+# Anything encrypted with this code can be decrypted by the JavaScript version
+from secrets import token_bytes
+from hashlib import pbkdf2_hmac, sha256
+# pip install pycryptodomex
 from Cryptodome.Random import get_random_bytes
 from Cryptodome.Cipher import AES
 
-from hashlib import pbkdf2_hmac, sha256
 
 BITS_256 = 256//8
 
-def deriveKey(plainText: str):
-    # @TODO    	if(plainText.length < 10) plainText = plainText.repeat(12 - plainText.length);
+def deriveKey(password: bytes, iv: bytes):
+    application_name = b"six-two/self-unzip.html"
+    salt_pre_hash_bytes = password + application_name + iv
+    salt = sha256(salt_pre_hash_bytes).digest()
+    iteration_count = 1_000_000 + len(password) + iv[0]
+    print("[Debug] Salt:", salt.hex())
+    print(iteration_count)
 
-    salt = sha256(f"349d{plainText}9d3458694307{len(plainText)}".encode()).digest() # @TODO: add IV too
-    print("salt", salt.hex())
-
-    key = pbkdf2_hmac("sha256", plainText.encode(), salt.hex().encode(), 1_000_000 + len(plainText), BITS_256)
-    print("key", key.hex())
-    return key
+    return pbkdf2_hmac("sha256", password, salt, iteration_count, BITS_256)
 
 
-def encrypt(password, cleartext):
-    key = deriveKey(password)
-    cipher = AES.new(key, AES.MODE_GCM)  # Create a cipher object to encrypt data
-    print("nonce", cipher.nonce.hex())  # Write out the nonce to the output file under the salt
-    ciphertext = cipher.encrypt(cleartext.encode())
-    print("ciphertext", ciphertext.hex())
-    print("tag", cipher.digest().hex())
+def encrypt(password: bytes, cleartext: bytes) -> bytes:
+    iv = token_bytes(12)
+    key = deriveKey(password, iv)
+    print("[Debug] Key:", key.hex())
+    cipher = AES.new(key, AES.MODE_GCM, nonce=iv)
+    ciphertext = cipher.encrypt(cleartext)
+    tag = cipher.digest()
+
+    return iv + ciphertext + tag
+
 
 if __name__ == "__main__":
-    password = "Summer2023!"
-    text = "The quick brown fox jumps over the lazy dog"
-    encrypt(password, text)
+    password = b"Summer2023!"
+    text = b"The quick brown fox jumps over the lazy dog"
+    ciphertext = encrypt(password, text)
+    print(ciphertext.hex())

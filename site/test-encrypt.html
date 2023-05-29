@@ -5,17 +5,13 @@ const fromHexString = (hexString) =>
   Uint8Array.from(hexString.match(/.{1,2}/g).map((byte) => parseInt(byte, 16)));
 
     window.onload = () => {
-        console.log("Starting main script")
         const text = "The quick brown fox jumps over the lazy dog";
         encoder = new TextEncoder('utf-8');
         const cleartext = encoder.encode(text);
     
         const password = "Summer2023!";
-        encrypt(password, cleartext).then(encrypted => {
-            console.log("Enc", encrypted);
-            console.log("Enc data", new Uint8Array(encrypted.encrypted));
-        
-            decrypt(password, encrypted.iv, encrypted.encrypted).then(decrypted => {
+        encryptBytes(password, cleartext).then(encrypted => {        
+            decryptBytes(password, encrypted).then(decrypted => {
                 decrypted_text = new TextDecoder("utf-8").decode(decrypted);
                 console.log("dec", decrypted_text);
                 console.log("isSame?", text === decrypted_text);
@@ -25,20 +21,13 @@ const fromHexString = (hexString) =>
             }).catch(e => console.error("Decryption failed:", e));
         });
 
-        // salt 89c2adf68bfd87ad0ec23217e7520aff9748aac12404c463cc8b82afa7ad9b01
-        // key ac845256012d0b2527aa8b3f91d0f0530cf2da415110d422f895b97630796b9f
-        // nonce 4504d00a416a77df270442a056f0d73b
-        // ciphertext 877439db8a14ad5e300cfb6f99af7a8175a663427f670350c7074b1163c0b76ba363f3ee89ed36413c291b
-        // tag a4b936741d962a57c0d2c6c50b7afc21
+        const python_encrypted = fromHexString("98d1f98388e2eda562bd52c76b70d622bb6ba386bb47ece60264dfe2cb2ce4d31d9ad57b0f625327d0b4bdc5c399cbb61fdf428958f2b331f625285b078f8a3b2c1b7973986d68");
+        console.log("Data from pyhton", python_encrypted)
 
-        console.log("Decrypting python stuff");
-        const python_iv = fromHexString("4504d00a416a77df270442a056f0d73b");
-        const python_encrypted = fromHexString("877439db8a14ad5e300cfb6f99af7a8175a663427f670350c7074b1163c0b76ba363f3ee89ed36413c291b" + "a4b936741d962a57c0d2c6c50b7afc21");
-
-        decrypt(password, python_iv, python_encrypted).then(python_decrypted =>  {
+        decryptBytes(password, python_encrypted).then(python_decrypted =>  {
             decrypted_text = new TextDecoder("utf-8").decode(python_decrypted);
             console.log("python_decrypted", decrypted_text);
-        });
+        }).catch(e => console.error("Python decrypt failed:", e));
         
     }
 </script>
