@@ -1,6 +1,9 @@
 <script src="aes4js.js"></script>
 Test to ensure crypto methods (still) work. See console for details.
 <script>
+const fromHexString = (hexString) =>
+  Uint8Array.from(hexString.match(/.{1,2}/g).map((byte) => parseInt(byte, 16)));
+
     window.onload = () => {
         console.log("Starting main script")
         const text = "The quick brown fox jumps over the lazy dog";
@@ -21,5 +24,21 @@ Test to ensure crypto methods (still) work. See console for details.
                 }
             }).catch(e => console.error("Decryption failed:", e));
         });
+
+        // salt 89c2adf68bfd87ad0ec23217e7520aff9748aac12404c463cc8b82afa7ad9b01
+        // key ac845256012d0b2527aa8b3f91d0f0530cf2da415110d422f895b97630796b9f
+        // nonce 4504d00a416a77df270442a056f0d73b
+        // ciphertext 877439db8a14ad5e300cfb6f99af7a8175a663427f670350c7074b1163c0b76ba363f3ee89ed36413c291b
+        // tag a4b936741d962a57c0d2c6c50b7afc21
+
+        console.log("Decrypting python stuff");
+        const python_iv = fromHexString("4504d00a416a77df270442a056f0d73b");
+        const python_encrypted = fromHexString("877439db8a14ad5e300cfb6f99af7a8175a663427f670350c7074b1163c0b76ba363f3ee89ed36413c291b" + "a4b936741d962a57c0d2c6c50b7afc21");
+
+        decrypt(password, python_iv, python_encrypted).then(python_decrypted =>  {
+            decrypted_text = new TextDecoder("utf-8").decode(python_decrypted);
+            console.log("python_decrypted", decrypted_text);
+        });
+        
     }
 </script>
