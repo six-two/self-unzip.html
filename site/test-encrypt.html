@@ -1,0 +1,25 @@
+<script src="aes4js.js"></script>
+Test to ensure crypto methods (still) work. See console for details.
+<script>
+    window.onload = () => {
+        console.log("Starting main script")
+        const text = "The quick brown fox jumps over the lazy dog";
+        encoder = new TextEncoder('utf-8');
+        const cleartext = encoder.encode(text);
+    
+        const password = "Summer2023!";
+        encrypt(password, cleartext).then(encrypted => {
+            console.log("Enc", encrypted);
+            console.log("Enc data", new Uint8Array(encrypted.encrypted));
+        
+            decrypt(password, encrypted.iv, encrypted.encrypted).then(decrypted => {
+                decrypted_text = new TextDecoder("utf-8").decode(decrypted);
+                console.log("dec", decrypted_text);
+                console.log("isSame?", text === decrypted_text);
+                if (text != decrypted_text) {
+                    alert("Crypto broken")
+                }
+            }).catch(e => console.error("Decryption failed:", e));
+        });
+    }
+</script>
