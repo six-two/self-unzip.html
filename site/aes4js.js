@@ -1,4 +1,4 @@
-// Based on https://github.com/rndme/aes4js/blob/master/aes4js.js, but modified to remove that DataUrl en-/decoding, simplified code for my use and converted to async. Also changed how the salt is generated (see https://github.com/rndme/aes4js/issues/3) and streamlined the key derivation a bit
+// Loosely based on https://github.com/rndme/aes4js/blob/master/aes4js.js, but modified to remove that DataUrl en-/decoding, simplified code for my use and converted to async. Also changed how the salt is generated (see https://github.com/rndme/aes4js/issues/3) and streamlined the key derivation a bit
 // aes4js, by dandavis. MIT applies.
 
 const str2bytes = string => new TextEncoder("utf-8").encode(string);
