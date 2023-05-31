@@ -7,6 +7,7 @@ import sys
 from typing import Optional
 # local
 from .crypto import encrypt
+from .minified_js import B85DECODE, DECRYPT, UNZIP
 
 SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
 DEFAULT_TEMPLATE_FILE = os.path.join(SCRIPT_DIR, "template.html")
@@ -15,11 +16,6 @@ JS_EVAL = "const og_text=new TextDecoder().decode(og_data);console.debug(`Evalua
 JS_REPLACE = 'const og_text=new TextDecoder().decode(og_data);setTimeout(()=>{console.log("replacing");let n=document.open("text/html","replace");n.write(og_text);n.close()}, 50);' # since decryption is async we do not catch the onload event anymore
 JS_DOWNLOAD = 'let b=new Blob([og_data],{type:"application/octet-stream"});let u=URL.createObjectURL(b);document.body.innerHTML=`<h1>Unpacked {{NAME}}</h1><a href="${u}" download="{{NAME}}">Click here to download</a>`'
 
-CRYPTO_CODE = """// Based loosely on https://github.com/rndme/aes4js/blob/master/aes4js.js, MIT License, dandavis
-const fns2b=a=>(new TextEncoder("utf-8")).encode(a);async function fndrv(a,b){a=fns2b(a);var c=fns2b("six-two/self-unzip.html");c=new Uint8Array([...a,...c,...b]);c=await crypto.subtle.digest("SHA-256",c);b=1E6+a.length+b[0];a=await window.crypto.subtle.importKey("raw",a,"PBKDF2",!1,["deriveBits","deriveKey"]);return await window.crypto.subtle.deriveKey({name:"PBKDF2",salt:c,iterations:b,hash:"SHA-256"},a,{name:"AES-GCM",length:256},!0,["encrypt","decrypt"])}
-async function fndec(a,b){const c=b.slice(0,12);b=b.slice(12);a=await fndrv(a,c);return await window.crypto.subtle.decrypt({name:"AES-GCM",iv:c,tagLength:128},a,b)}
-async function decryptLoop(a){if(!isSecureContext)throw alert("Decryption only possible in secure context. Please load via file://, https://, or from localhost."),Error("Insecure Context");let b;b=location.hash?location.hash.slice(1):prompt("Please enter the decryption password");try{return await fndec(b,a)}catch(c){alert(`"Decryption failed" with error: ${c}`),location.hash="",location.reload()}};
-"""
 
 def get_javascript(page_type: str, file_name: str):
     if page_type == "download":
@@ -49,20 +45,22 @@ def create_page(input_file: str, template_file: str, java_script: str, encryptio
     with open(input_file, "rb") as f:
         file_contents = f.read()
 
+    file_contents = gzip.compress(file_contents)
+    library_code = UNZIP + B85DECODE
     if encryption_password:
         # Encrypt before compression
         file_contents = encrypt(encryption_password.encode(), file_contents)
         # print(file_contents.hex())
-        template = template.replace("{{GLUE_CODE}}", "decryptLoop(decompress(c_data)).then(action);")
-        template = template.replace("{{CRYPTO_CODE}}", CRYPTO_CODE)
-        java_script = "console.log('Decrypted', og_data);" + java_script # debugging, should I keep it?
+        template = template.replace("{{GLUE_CODE}}", "console.log('Encoded data',c_data);d_data=b85decode(c_data);console.log('Decode data',d_data);decryptLoop(d_data).then(decrypted => {console.log('Decrypted',decrypted);u_data=unzip(decrypted);console.log('Unzipped data', u_data);action(u_data)});")
+        library_code += DECRYPT
     else:
-        template = template.replace("{{GLUE_CODE}}", "action(decompress(c_data));")
-        template = template.replace("{{CRYPTO_CODE}}", "")
+        template = template.replace("{{GLUE_CODE}}", "console.log('Encoded data',c_data);d_data=b85decode(c_data);console.log('Decode data',d_data);u_data=unzip(d_data);console.log('Unzipped data', u_data);action(u_data);")
 
+    file_contents = base64.a85encode(file_contents, adobe=True)
+    file_contents = file_contents.replace(b'"', b"v").replace(b"\\", b"w")
+    encoded_data = file_contents.decode("utf-8")
 
-
-    encoded_data = encode_bytes(file_contents)
+    template = template.replace("{{LIBRARY_CODE}}", library_code)
     template = template.replace("{{DATA}}", encoded_data)
     template = template.replace("{{PAYLOAD_CODE}}", java_script)
     return template

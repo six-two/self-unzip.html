@@ -27,11 +27,12 @@ async function fndec(password_str, payload_bytes) {
     const iv_bytes = payload_bytes.slice(0, 12);
     const ciphertext_bytes = payload_bytes.slice(12)
     const key = await fndrv(password_str, iv_bytes);
-    return await window.crypto.subtle.decrypt({
+    const decrypted = await window.crypto.subtle.decrypt({
         name: "AES-GCM",
         iv: iv_bytes,
         tagLength: 128,
     }, key, ciphertext_bytes);
+    return new Uint8Array(decrypted);
 }
 
 async function decryptLoop(data_bytes) {
@@ -51,6 +52,8 @@ async function decryptLoop(data_bytes) {
     } catch (e) {
         alert(`"Decryption failed" with error: ${e}`);
         location.hash="";// delete the hash, since it was wrong
-        location.reload();//this simplifies the code (no recursion, no loops, etc)
+        if (!location.search.includes("noreload")){// use ?noreload in the URL for debugging
+            location.reload();//this simplifies the code (no recursion, no loops, etc)
+        }
     }
 }

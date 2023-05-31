@@ -1,6 +1,3 @@
-//the code for unpacking a file. This file gets bundled/minified and converted to ./output/main.min.js
-import {decompressSync, strFromU8} from 'fflate';
-
 // Source: https://raw.githubusercontent.com/nE0sIghT/ascii85.js/master/ascii85.js
 // ASCII85 a.k.a. Base85 implementation in JavaScript
 // Copyright (C) 2018  Yuri Konotopov (Юрий Конотопов) <ykonotopov@gnome.org>
@@ -107,24 +104,25 @@ function toByteArray (text)
     return new Uint8Array(output);
 }
 
+const b85decode = toByteArray;
 
-// My code
-log = (name, value) => {
-    console.log(name);
-    console.debug(value);
-}
+// // My code
+// log = (name, value) => {
+//     console.log(name);
+//     console.debug(value);
+// }
 
-decompress = (enc) => {
-    log("input", enc)
+// decompress = (enc) => {
+//     log("input", enc)
 
-    dec = toByteArray(enc);
-    log("after ascii85", dec)
+//     dec = toByteArray(enc);
+//     log("after ascii85", dec)
 
-    dec = decompressSync(dec);
-    log("after fflate", dec)
+//     dec = decompressSync(dec);
+//     log("after fflate", dec)
 
-    // dec = strFromU8(dec);
-    // log("output", dec)
+//     // dec = strFromU8(dec);
+//     // log("output", dec)
 
-    return dec;
-}
+//     return dec;
+// }

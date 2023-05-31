@@ -15,8 +15,8 @@ def deriveKey(password: bytes, iv: bytes):
     salt_pre_hash_bytes = password + application_name + iv
     salt = sha256(salt_pre_hash_bytes).digest()
     iteration_count = 1_000_000 + len(password) + iv[0]
-    print("[Debug] Salt:", salt.hex())
-    print(iteration_count)
+    # print("[Debug] Salt:", salt.hex())
+    # print(iteration_count)
 
     return pbkdf2_hmac("sha256", password, salt, iteration_count, BITS_256)
 
@@ -24,7 +24,7 @@ def deriveKey(password: bytes, iv: bytes):
 def encrypt(password: bytes, cleartext: bytes) -> bytes:
     iv = token_bytes(12)
     key = deriveKey(password, iv)
-    print("[Debug] Key:", key.hex())
+    # print("[Debug] Key:", key.hex())
     cipher = AES.new(key, AES.MODE_GCM, nonce=iv)
     ciphertext = cipher.encrypt(cleartext)
     tag = cipher.digest()
