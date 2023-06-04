@@ -4,7 +4,6 @@
 from secrets import token_bytes
 from hashlib import pbkdf2_hmac, sha256
 # pip install pycryptodomex
-from Cryptodome.Random import get_random_bytes
 from Cryptodome.Cipher import AES
 
 
@@ -30,6 +29,24 @@ def encrypt(password: bytes, cleartext: bytes) -> bytes:
     tag = cipher.digest()
 
     return iv + ciphertext + tag
+
+
+class EfficientEncryptor:
+    """
+    Precomputes the key, so that it does not need to be computed multiple times.
+    DO ONLY USE ONE OF THE OUTPUTS, since the IV IS REUSED.
+    """
+    def __init__(self, password: bytes) -> None:
+        self.password = password
+        self.iv = token_bytes(12)
+        self.key = deriveKey(password, self.iv)
+
+    def encrypt_with_reused_iv(self, cleartext: bytes) -> bytes:
+        cipher = AES.new(self.key, AES.MODE_GCM, nonce=self.iv)
+        ciphertext = cipher.encrypt(cleartext)
+        tag = cipher.digest()
+
+        return self.iv + ciphertext + tag
 
 
 if __name__ == "__main__":

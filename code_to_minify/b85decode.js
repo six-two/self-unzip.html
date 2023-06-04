@@ -104,25 +104,4 @@ function toByteArray (text)
     return new Uint8Array(output);
 }
 
-const b85decode = toByteArray;
-
-// // My code
-// log = (name, value) => {
-//     console.log(name);
-//     console.debug(value);
-// }
-
-// decompress = (enc) => {
-//     log("input", enc)
-
-//     dec = toByteArray(enc);
-//     log("after ascii85", dec)
-
-//     dec = decompressSync(dec);
-//     log("after fflate", dec)
-
-//     // dec = strFromU8(dec);
-//     // log("output", dec)
-
-//     return dec;
-// }
+const b85decode = x => toByteArray(x.replaceAll("v", '"').replaceAll("w", "\\"));

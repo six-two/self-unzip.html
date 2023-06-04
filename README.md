@@ -47,6 +47,16 @@ Example usage of the pip package:
 self-unzip-html.py -t download -o psexec.html ~/Downloads/SysinternalsSuite/PsExec.exe
 ```
 
+## Encryption
+
+Encryption uses AES-GCM for encryption and tamper detection and PBKDF2 with 1 million rounds of SHA-256 for password derivation.
+The code has not been audited, so use it with caution.
+If data security is very important to you may want to manually encrypt it beforehand (for example using `gpg`).
+
+You can automatically decrypt a page by adding the password as the hash in a URL like `encrypted.html#monkey123!`.
+The hash will not be sent to the server, so your password may only be stored locally (in your browsing history).
+Otherwise a prompt will ask you for the password.
+
 
 ## template.html
 

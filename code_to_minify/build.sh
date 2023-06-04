@@ -6,6 +6,11 @@ cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null
 echo "[*] Install libraries & tools"
 npm install .
 
+python_escape() {
+    # Escape single backslashes
+    sed "s|\\\\|\\\\\\\\|g" "output/$1"
+}
+
 # # build output/main.js
 # ./node_modules/.bin/rollup -c rollup.config.js
 # # build the minified version
@@ -25,12 +30,12 @@ closure-compiler b85decode.js --js_output_file output/b85decode.min.js
 echo "[*] Generating minified_js.py"
 cat << EOF > ../python/self_unzip_html/minified_js.py
 B85DECODE="""// https://github.com/nE0sIghT/ascii85.js, MIT License, Copyright (C) 2018  Yuri Konotopov (Юрий Конотопов) <ykonotopov@gnome.org>
-$(cat output/b85decode.min.js)
+$(python_escape b85decode.min.js)
 """
 DECRYPT="""// Based loosely on https://github.com/rndme/aes4js/blob/master/aes4js.js, MIT License, dandavis
-$(cat output/decrypt.min.js)
+$(python_escape decrypt.min.js)
 """
 UNZIP="""// https://github.com/101arrowz/fflate, MIT License, Copyright (c) 2020 Arjun Barrett
-$(cat output/unzip.min.js)
+$(python_escape unzip.min.js)
 """
 EOF
