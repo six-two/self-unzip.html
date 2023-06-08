@@ -21,6 +21,18 @@ It is entirely client-site, your files do not get uploaded to a server.
 
 ## Installation
 
+### Current feature comparision
+
+Currently the python version has the most features.
+
+Feature | Web version | Python version
+---|---|---
+Base64 encoding | no | yes
+Ascii85 encoding | yes | yes
+GZIP compression | yes, always | yes, can be disabled
+AES-GCM encryption | no | yes
+Automatic detection of most efficient algorithms | no | yes
+
 ### Web version
 
 There is a bare-bones page generator written in plain HTML and JavaScript.
@@ -34,7 +46,7 @@ python3 -m http.server --directory ./site/
 ### Python version
 
 A Python script to generate self extracting web pages is under `python/main.py`.
-It just requires a modern Python version (probably Python3.9+) and has no external dependencies.
+It just requires a modern Python version (probably Python3.9+) and has no required external dependencies (but you need to install `pycryptodomex` if you want to encrypt contents).
 
 You can also install it with `pip`:
 

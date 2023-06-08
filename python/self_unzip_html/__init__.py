@@ -6,7 +6,6 @@ import os
 import sys
 from typing import Optional
 # local
-from .crypto import encrypt, EfficientEncryptor
 from .minified_js import B64DECODE, B85DECODE, DECRYPT, UNZIP
 
 SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
@@ -48,7 +47,18 @@ class PageBuilder:
 
         self.js_payload = js_payload
         # Nonce reuse should be save, since only one of the results should be used (we may need to encrypt multiple time if some parameters have the `auto` value)
-        self.encryptor = EfficientEncryptor(encryption_password.encode()) if encryption_password else None
+        if encryption_password:
+            try:
+                # Conditional import, since it is not always needed and loads an external library
+                from .crypto import EfficientEncryptor
+                self.encryptor = EfficientEncryptor(encryption_password.encode())
+            except Exception as ex:
+                print("[!]", ex)
+                print("[*] Hint: Please make sure, that 'pycryptodomex' is installed. You can install it by running:")
+                print("python3 -m pip install pycryptodomex")
+                exit(1)
+        else:
+            self.encryptor = None
 
     def build_page(self, compression: str, encoding: str) -> str:
         compression_list = ["none", "gzip"] if compression == "auto" else [compression]
