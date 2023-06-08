@@ -7,7 +7,7 @@ import sys
 from typing import Optional
 # local
 from .crypto import encrypt, EfficientEncryptor
-from .minified_js import B85DECODE, DECRYPT, UNZIP
+from .minified_js import B64DECODE, B85DECODE, DECRYPT, UNZIP
 
 SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
 DEFAULT_TEMPLATE_FILE = os.path.join(SCRIPT_DIR, "template.html")
@@ -28,13 +28,6 @@ def get_javascript(page_type: str, file_name: str):
         raise Exception(f"Unknown page type: '{page_type}'")
 
 
-def encode_bytes(file_bytes: bytes) -> str:
-    file_bytes = gzip.compress(file_bytes)
-    file_bytes = base64.a85encode(file_bytes, adobe=True)
-    file_bytes = file_bytes.replace(b'"', b"v").replace(b"\\", b"w")
-    return file_bytes.decode("utf-8")
-
-
 class PageBuilder:
     def __init__(self, input_file: str, template_file: str, js_payload: str, encryption_password: Optional[str]) -> None:
         try:
@@ -44,13 +37,18 @@ class PageBuilder:
             raise Exception(f"Failed to load template file '{template_file}'. Try specifying a different file with the --template option")
 
         try:
-            with open(input_file, "rb") as f:
-                self.input_data = f.read()
+            if input_file == "-":
+                # Read the buffer to get data as binary
+                self.input_data = sys.stdin.buffer.read()
+            else:
+                with open(input_file, "rb") as f:
+                    self.input_data = f.read()
         except:
             raise Exception(f"Failed to load input file '{input_file}'")
 
         self.js_payload = js_payload
-        self.encryptor = EfficientEncryptor(encryption_password.encode()) if encryption_password else None # since only one of the results should be used (we may need to encrypt multiple time if some parameters have the `auto` value)
+        # Nonce reuse should be save, since only one of the results should be used (we may need to encrypt multiple time if some parameters have the `auto` value)
+        self.encryptor = EfficientEncryptor(encryption_password.encode()) if encryption_password else None
 
     def build_page(self, compression: str, encoding: str) -> str:
         compression_list = ["none", "gzip"] if compression == "auto" else [compression]
@@ -84,29 +82,28 @@ class PageBuilder:
 
         if encoding == "ascii85":
             library_code += B85DECODE
-            decode_fn = "b85decode"
+            decode_fn = "decode"
             encoded_data = base64.a85encode(encoded_data, adobe=True).replace(b'"', b"v").replace(b"\\", b"w")
         elif encoding == "base64":
-            decode_fn = "atob"
+            library_code += B64DECODE
+            decode_fn = "await decodeAsync"
             encoded_data = base64.b64encode(encoded_data)
-            print("base64 is broken for now") # SEE https://developer.mozilla.org/en-US/docs/Glossary/Base64#solution_1_%E2%80%93_escaping_the_string_before_encoding_it
         else:
             raise Exception(f"Unknown encoding method '{compression}'")
 
-        
-        glue_code = ("console.log('Encoded data',c_data);" 
-            + f"d_data={decode_fn}(c_data);console.log('Decode data',d_data);")
+        glue_decrypt = ""
         if self.encryptor:
-            if compression == "gzip":
-               glue_code += "decryptLoop(d_data).then(decrypted => {console.log('Decrypted',decrypted);u_data=unzip(decrypted);console.log('Unzipped data', u_data);action(u_data)});"
-            else:
-               glue_code += "decryptLoop(d_data).then(decrypted => {console.log('Decrypted',decrypted);action(decrypted)});"
-        else:
-            if compression == "gzip":
-                glue_code += "u_data=unzip(d_data);console.log('Unzipped data', u_data);action(u_data);"
-            else:
-                glue_code += "action(d_data);"
+            glue_decrypt += "data=await decryptLoop(data);console.log('Decrypted:',data);"
+        if compression == "gzip":
+            glue_decrypt += "data=unzip(data);console.log('Unzipped:',data);"
 
+        glue_code = f"""async function main(data) {{
+    console.log('Encoded:',data);
+    data={decode_fn}(data);console.log('Decoded:',data);
+    {glue_decrypt}
+    action(data);
+}}main(c_data);""".replace("\n", "").replace("\r", "").replace("    ", "")
+        
 
         return self.replace_in_template(library_code, glue_code, self.js_payload, encoded_data)
 
@@ -119,40 +116,9 @@ class PageBuilder:
         )
 
 
-def create_page(input_file: str, template_file: str, java_script: str, encryption_password: Optional[str]):
-    try:
-        with open(template_file, "r") as f:
-            template = f.read()
-    except:
-        raise Exception(f"Failed to load template file '{template_file}'. Try specifying a different file with the --template option")
-
-    with open(input_file, "rb") as f:
-        file_contents = f.read()
-
-    file_contents = gzip.compress(file_contents)
-    library_code = UNZIP + B85DECODE
-    if encryption_password:
-        # Encrypt before compression
-        file_contents = encrypt(encryption_password.encode(), file_contents)
-        # print(file_contents.hex())
-        template = template.replace("{{GLUE_CODE}}", "console.log('Encoded data',c_data);d_data=b85decode(c_data);console.log('Decode data',d_data);decryptLoop(d_data).then(decrypted => {console.log('Decrypted',decrypted);u_data=unzip(decrypted);console.log('Unzipped data', u_data);action(u_data)});")
-        library_code += DECRYPT
-    else:
-        template = template.replace("{{GLUE_CODE}}", "console.log('Encoded data',c_data);d_data=b85decode(c_data);console.log('Decode data',d_data);u_data=unzip(d_data);console.log('Unzipped data', u_data);action(u_data);")
-
-    file_contents = base64.a85encode(file_contents, adobe=True)
-    file_contents = file_contents.replace(b'"', b"v").replace(b"\\", b"w")
-    encoded_data = file_contents.decode("utf-8")
-
-    template = template.replace("{{LIBRARY_CODE}}", library_code)
-    template = template.replace("{{DATA}}", encoded_data)
-    template = template.replace("{{PAYLOAD_CODE}}", java_script)
-    return template
-
-
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("file", help="the file to encode")
+    ap.add_argument("file", help="the file to encode. Use '-' to read from standard input")
     ap.add_argument("-o", "--output", help="the location to write the output to. If not specified stdout will be used instead")
     ap.add_argument("-t", "--type", default="replace", choices=["download", "eval", "replace"], help="the output type (default: replace)")
     ap.add_argument("-c", "--compression", default="auto", choices=["none", "auto", "gzip"], help="how to compress the contents")

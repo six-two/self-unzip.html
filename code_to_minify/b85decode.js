@@ -104,4 +104,4 @@ function toByteArray (text)
     return new Uint8Array(output);
 }
 
-const b85decode = x => toByteArray(x.replaceAll("v", '"').replaceAll("w", "\\"));
+const decode = x => toByteArray(x.replaceAll("v", '"').replaceAll("w", "\\"));

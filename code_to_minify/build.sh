@@ -27,10 +27,15 @@ closure-compiler output/unzip.js --js_output_file output/unzip.min.js
 echo "[*] Minifying base85 decoding code"
 closure-compiler b85decode.js --js_output_file output/b85decode.min.js
 
+echo "[*] Minifying base64 decoding code"
+closure-compiler b64decode.js --js_output_file output/b64decode.min.js
+
 echo "[*] Generating minified_js.py"
 cat << EOF > ../python/self_unzip_html/minified_js.py
 B85DECODE="""// https://github.com/nE0sIghT/ascii85.js, MIT License, Copyright (C) 2018  Yuri Konotopov (Юрий Конотопов) <ykonotopov@gnome.org>
 $(python_escape b85decode.min.js)
+"""
+B64DECODE="""$(python_escape b64decode.min.js)
 """
 DECRYPT="""// Based loosely on https://github.com/rndme/aes4js/blob/master/aes4js.js, MIT License, dandavis
 $(python_escape decrypt.min.js)
