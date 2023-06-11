@@ -45,7 +45,7 @@ async function decryptLoop(data_bytes) {
     if (location.hash) {
         pw = location.hash.slice(1); // remove leading #
     } else {
-        pw = prompt("Please enter the decryption password");
+        pw = prompt("PW_PROMPT");
     }
     try {
         return await fndec(pw, data_bytes);

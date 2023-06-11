@@ -2,6 +2,7 @@
 import argparse
 import base64
 import gzip
+import json
 import os
 import sys
 from typing import Optional
@@ -26,9 +27,14 @@ def get_javascript(page_type: str, file_name: str):
     else:
         raise Exception(f"Unknown page type: '{page_type}'")
 
+PRINT_INFO_FILE = None
+
+def print_info(message):
+    print(f"[*] {message}", file=PRINT_INFO_FILE)
+
 
 class PageBuilder:
-    def __init__(self, input_file: str, template_file: str, js_payload: str, encryption_password: Optional[str]) -> None:
+    def __init__(self, input_file: str, template_file: str, js_payload: str, encryption_password: Optional[str], password_hint: str) -> None:
         try:
             with open(template_file, "r") as f:
                 self.template = f.read()
@@ -52,6 +58,8 @@ class PageBuilder:
                 # Conditional import, since it is not always needed and loads an external library
                 from .crypto import EfficientEncryptor
                 self.encryptor = EfficientEncryptor(encryption_password.encode())
+                escaped_hint_wrapped_in_quotes = json.dumps(password_hint) # @TODO: In theory this might work, try it out in practice
+                self.decrypt_code = DECRYPT.replace('"PW_PROMPT"', escaped_hint_wrapped_in_quotes)
             except Exception as ex:
                 print("[!]", ex)
                 print("[*] Hint: Please make sure, that 'pycryptodomex' is installed. You can install it by running:")
@@ -68,7 +76,7 @@ class PageBuilder:
         for c in compression_list:
             for e in encoding_list:
                 page = self.build_page_no_auto(c, e)
-                print(f"[*] Testing combination: {c} & {e} => {len(page)} bytes")
+                print_info(f"Testing combination: {c} & {e} => {len(page)} bytes")
                 variants.append(page)
 
         # Return the shortest result
@@ -87,7 +95,7 @@ class PageBuilder:
             raise Exception(f"Unknown compression method '{compression}'")
 
         if self.encryptor:
-            library_code += DECRYPT
+            library_code += self.decrypt_code
             encoded_data = self.encryptor.encrypt_with_reused_iv(encoded_data)
 
         if encoding == "ascii85":
@@ -130,25 +138,45 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("file", help="the file to encode. Use '-' to read from standard input")
     ap.add_argument("-o", "--output", help="the location to write the output to. If not specified stdout will be used instead")
+    ap.add_argument("-O", "--open", action="store_true", help="if using the -o option, also try to immediately open the file in the default web borwser")
     ap.add_argument("-t", "--type", default="replace", choices=["download", "eval", "replace"], help="the output type (default: replace)")
     ap.add_argument("-c", "--compression", default="auto", choices=["none", "auto", "gzip"], help="how to compress the contents")
     ap.add_argument("-e", "--encoding", default="auto", choices=["auto", "base64", "ascii85"], help="how to encode the binary data")
     ap.add_argument("--template", help="use this template file instead of the default one")
     ap.add_argument("-p", "--password", help="encrypt the compressed data using this password")
+    ap.add_argument("-P", "--password-prompt", default="Please enter the decryption password", help="provide your custom password prompt, that may contain hints, etc")
+    ap.add_argument("-q", "--quiet", action="store_true", help="minimize console output")
     args = ap.parse_args()
+
+    if args.quiet:
+        global print_info
+        print_info = lambda message: None # Do nothing lambda
+    if not args.output:
+        # Since the output is written to stdout, we write info messages to stderr.
+        # This makes them visible to the user but not to the next program in the pipe
+        global PRINT_INFO_FILE
+        PRINT_INFO_FILE = sys.stderr
 
     template_file = args.template or DEFAULT_TEMPLATE_FILE
     file_name = os.path.basename(args.file)
     java_script = get_javascript(args.type, file_name)
 
-    page_builder = PageBuilder(args.file, template_file, java_script, args.password)
+    page_builder = PageBuilder(args.file, template_file, java_script, args.password, args.password_prompt)
     html_page = page_builder.build_page(args.compression, args.encoding)
 
     if args.output:
         with open(args.output, "w") as f:
             f.write(html_page)
+
+        if args.open:
+            url = f"file://{os.path.realpath(args.output)}"
+            print_info(f"Opening {url} in webbrowser")
+            import webbrowser
+            webbrowser.open(url)
     else:
         print(html_page)
+        if args.open:
+            print_info("Ignoring -O/--open since the output is stdout")
 
     return 0
 
