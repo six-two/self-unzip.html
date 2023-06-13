@@ -27,10 +27,13 @@ def get_javascript(page_type: str, file_name: str):
     else:
         raise Exception(f"Unknown page type: '{page_type}'")
 
-PRINT_INFO_FILE = None
+PRINT_INFO_MESSAGES = True
 
 def print_info(message):
-    print(f"[*] {message}", file=PRINT_INFO_FILE)
+    # Since the output may be written to stdout, we write info messages to stderr.
+    # This makes them visible to the user but not to the next program in the pipe
+    if PRINT_INFO_MESSAGES:
+        print(f"[*] {message}", file=sys.stderr)
 
 
 class PageBuilder:
@@ -136,26 +139,28 @@ class PageBuilder:
 
 def main() -> int:
     ap = argparse.ArgumentParser()
+    # ap_input = ap.add_argument_group("input options")
+    # ap_input_mutex = ap_input.add_mutually_exclusive_group(required=True)
     ap.add_argument("file", help="the file to encode. Use '-' to read from standard input")
-    ap.add_argument("-o", "--output", help="the location to write the output to. If not specified stdout will be used instead")
-    ap.add_argument("-O", "--open", action="store_true", help="if using the -o option, also try to immediately open the file in the default web borwser")
-    ap.add_argument("-t", "--type", default="replace", choices=["download", "eval", "replace"], help="the output type (default: replace)")
-    ap.add_argument("-c", "--compression", default="auto", choices=["none", "auto", "gzip"], help="how to compress the contents")
-    ap.add_argument("-e", "--encoding", default="auto", choices=["auto", "base64", "ascii85"], help="how to encode the binary data")
-    ap.add_argument("--template", help="use this template file instead of the default one")
-    ap.add_argument("-p", "--password", help="encrypt the compressed data using this password")
-    ap.add_argument("-P", "--password-prompt", default="Please enter the decryption password", help="provide your custom password prompt, that may contain hints, etc")
-    ap.add_argument("-q", "--quiet", action="store_true", help="minimize console output")
+    # ap_input_mutex.add_argument("-F", "--file-list", help="a list of files to") # @TODO: If i add this, how will output options work?
+
+    ap_output = ap.add_argument_group("output options")
+    ap_output.add_argument("-o", "--output", help="the location to write the output to. If not specified stdout will be used instead")
+    ap_output.add_argument("-O", "--open", action="store_true", help="if writing output to a file, try to immediately open the file in the default web browser afterwards")
+    ap_output.add_argument("-q", "--quiet", action="store_true", help="minimize console output")
+
+    ap_settings = ap.add_argument_group("settings")
+    ap_settings.add_argument("-t", "--type", default="replace", choices=["download", "eval", "replace"], help="the output type (default: replace)")
+    ap_settings.add_argument("-c", "--compression", default="auto", choices=["auto", "none", "gzip"], help="how to compress the contents (default: auto)")
+    ap_settings.add_argument("-e", "--encoding", default="auto", choices=["auto", "base64", "ascii85"], help="how to encode the binary data  (default: auto). base64 may not work for large contents (>65kB) due to different browser limitations")
+    ap_settings.add_argument("--template", help="use this template file instead of the default one")
+    ap_settings.add_argument("-p", "--password", help="encrypt the compressed data using this password")
+    ap_settings.add_argument("-P", "--password-prompt", default="Please enter the decryption password", help="provide your custom password prompt, that can for example be used to provide a password hint")
     args = ap.parse_args()
 
     if args.quiet:
-        global print_info
-        print_info = lambda message: None # Do nothing lambda
-    if not args.output:
-        # Since the output is written to stdout, we write info messages to stderr.
-        # This makes them visible to the user but not to the next program in the pipe
-        global PRINT_INFO_FILE
-        PRINT_INFO_FILE = sys.stderr
+        global PRINT_INFO_MESSAGES
+        PRINT_INFO_MESSAGES = False
 
     template_file = args.template or DEFAULT_TEMPLATE_FILE
     file_name = os.path.basename(args.file)

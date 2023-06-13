@@ -61,7 +61,7 @@ self-unzip-html.py -t download -o psexec.html ~/Downloads/SysinternalsSuite/PsEx
 
 ## Encryption
 
-Encryption uses AES-GCM for encryption and tamper detection and PBKDF2 with 1 million rounds of SHA-256 for password derivation.
+Encryption uses AES-GCM for encryption and tamper detection and PBKDF2 with slightly over 1 million rounds of SHA-256 for password derivation.
 The code has not been audited, so use it with caution.
 If data security is very important to you may want to manually encrypt it beforehand (for example using `gpg`).
 
@@ -69,10 +69,17 @@ You can automatically decrypt a page by adding the password as the hash in a URL
 The hash will not be sent to the server, so your password may only be stored locally (in your browsing history).
 Otherwise a prompt will ask you for the password.
 
+## JavaScript code
 
-## template.html
+### Python
 
-This basically just explains, how I generated the obfuscated script in `template.html`.
+The JavaScript code is modular to decrease size and allow mixing and matching different algorithms.
+The unminified files are in `code_to_minify/`.
+They are minified by running `code_to_minify/build.sh`, which updates `python/self_unzip_html/minified_js.py`.
+
+### template.html
+
+This basically just explains, how I generated the obfuscated script in `template.html` (JavaScript version).
 In case you are paranoid, you can reproduce the steps.
 Or if there is an important update to `fflate` or `ascii85`, I will have to run them again.
 
