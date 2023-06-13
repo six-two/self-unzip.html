@@ -9,9 +9,9 @@ It then puts the resulting string in a template file, that contains the code to 
 
 Currently there are three actions implemented, that can be executed, after the payload is decoded:
 
-- Execute payload as JavaScript code (example usecase: obfuscate malicious JS code)
-- Show payload as HTML page (example usecase: compress a big web page)
-- Download the payload as a file (example usecase: bypass antivirus / filters)
+- `eval`: Execute payload as JavaScript code (example usecase: obfuscate malicious JS code)
+- `replace`: Show payload as HTML page (example usecase: compress a big web page)
+- `download`: Download the payload as a file (example usecase: bypass antivirus / filters)
 
 ## Demo
 
@@ -56,7 +56,12 @@ python3 -m pip install -U self-unzip-html
 
 Example usage of the pip package:
 ```bash
-self-unzip-html.py -t download -o psexec.html ~/Downloads/SysinternalsSuite/PsExec.exe
+self-unzip-html -t download -o psexec.html ~/Downloads/SysinternalsSuite/PsExec.exe
+```
+
+Or if you wanted to password-protect it:
+```bash
+self-unzip-html -t download -o psexec.html -p YourPasswordHere ~/Downloads/SysinternalsSuite/PsExec.exe
 ```
 
 ## Encryption

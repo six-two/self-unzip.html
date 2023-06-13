@@ -17,7 +17,7 @@ JS_REPLACE = 'const og_text=new TextDecoder().decode(og_data);setTimeout(()=>{co
 JS_DOWNLOAD = 'let b=new Blob([og_data],{type:"application/octet-stream"});let u=URL.createObjectURL(b);document.body.innerHTML=`<h1>Unpacked {{NAME}}</h1><a href="${u}" download="{{NAME}}">Click here to download</a>`'
 
 
-def get_javascript(page_type: str, file_name: str):
+def get_javascript(page_type: str, file_name: str) -> str:
     if page_type == "download":
         return JS_DOWNLOAD.replace("{{NAME}}", file_name)
     elif page_type == "eval":
@@ -137,7 +137,7 @@ class PageBuilder:
         )
 
 
-def main() -> int:
+def main() -> None:
     ap = argparse.ArgumentParser()
     # ap_input = ap.add_argument_group("input options")
     # ap_input_mutex = ap_input.add_mutually_exclusive_group(required=True)
@@ -183,9 +183,6 @@ def main() -> int:
         if args.open:
             print_info("Ignoring -O/--open since the output is stdout")
 
-    return 0
-
 
 if __name__ == "__main__":
-    exit_code = main()
-    sys.exit(exit_code)
+    main()
