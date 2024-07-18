@@ -94,6 +94,7 @@ class PageBuilder:
     def build_page_no_auto(self, compression: str, encoding: str) -> str:
         library_code = ""
         encoded_data = self.input_data
+        js_payload_action = self.js_payload
 
         if compression == "gzip":
             library_code += UNZIP
@@ -105,7 +106,14 @@ class PageBuilder:
 
         if self.encryptor:
             library_code += self.decrypt_code
+            # OPSEC: Also encrypt the action, so that an observer can not see/flag what we want to do
+            # We hack this into the existing schema by encrypting <PAYLOAD_ACTION_JS_TO_EVAL>\x00<ORIGINAL_DATA>.
+            encoded_data = js_payload_action.encode() + b"\x00" + encoded_data
             encoded_data = self.encryptor.encrypt_with_reused_iv(encoded_data)
+
+            # Then we modify our action to extract the code to execute and the original data.
+            # This is much easier than modifying the existing encryption code to reuse the password, key, etc and perform separate decryptions for the payload and the action
+            js_payload_action = "idx=og_data.indexOf(0);code=new TextDecoder().decode(og_data.slice(0,idx));og_data=og_data.slice(idx+1);eval(code);"
 
         if encoding == "ascii85":
             library_code += B85DECODE
@@ -132,7 +140,7 @@ class PageBuilder:
 }}main(c_data);""".replace("\n", "").replace("\r", "").replace("    ", "")
         
 
-        return self.replace_in_template(library_code, glue_code, self.js_payload, encoded_data)
+        return self.replace_in_template(library_code, glue_code, js_payload_action, encoded_data)
 
     def replace_in_template(self, library_code: str, glue_code: str, payload_code: str, encoded_data: bytes) -> str:
         return (self.template

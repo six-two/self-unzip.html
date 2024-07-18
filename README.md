@@ -118,3 +118,5 @@ closure-compiler output/main.js --js_output_file output/main.min.js
     - `--download` now has an optional parameter that allows you to change the file's name
     - `--driveby-redirect` allows you to perform a driveby download an redirect the visitor immediately to another page
     - `--custom` allows you to provide your own JavaScript code, which is useful for not implemented techniques or special usecases
+- Password protection now encrypts the payload action too.
+    This should prevent anyone without the password from inspecting the file and for example seeing that it performs a drive by download and redirects to a specific site.
