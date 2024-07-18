@@ -114,5 +114,7 @@ closure-compiler output/main.js --js_output_file output/main.min.js
 
 ### HEAD
 
-- replaced the `--type` parameter with specific flags like `--eval`, `--download`, `--replace`, and `--custom`
-    - `custom` allows you to provide your own JavaScript code, which is useful for not implemented techniques or special usecases
+- Replaced the `--type` parameter with specific flags like `--download`, `--driveby-redirect`, `--eval`, `--replace`, and `--custom`
+    - `--download` now has an optional parameter that allows you to change the file's name
+    - `--driveby-redirect` allows you to perform a driveby download an redirect the visitor immediately to another page
+    - `--custom` allows you to provide your own JavaScript code, which is useful for not implemented techniques or special usecases
