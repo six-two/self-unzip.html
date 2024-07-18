@@ -109,3 +109,10 @@ Otherwise minify the code (may require you to install an external minifier like 
 ```bash
 closure-compiler output/main.js --js_output_file output/main.min.js
 ```
+
+## Notable changes
+
+### HEAD
+
+- replaced the `--type` parameter with specific flags like `--eval`, `--download`, `--replace`, and `--custom`
+    - `custom` allows you to provide your own JavaScript code, which is useful for not implemented techniques or special usecases

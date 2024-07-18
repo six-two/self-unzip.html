@@ -5,7 +5,7 @@ import gzip
 import json
 import os
 import sys
-from typing import Optional
+from typing import Optional, Any
 # local
 from .minified_js import B64DECODE, B85DECODE, DECRYPT, UNZIP
 
@@ -17,15 +17,18 @@ JS_REPLACE = 'const og_text=new TextDecoder().decode(og_data);setTimeout(()=>{co
 JS_DOWNLOAD = 'let b=new Blob([og_data],{type:"application/octet-stream"});let u=URL.createObjectURL(b);document.body.innerHTML=`<h1>Unpacked {{NAME}}</h1><a href="${u}" download="{{NAME}}">Click here to download</a>`'
 
 
-def get_javascript(page_type: str, file_name: str) -> str:
-    if page_type == "download":
-        return JS_DOWNLOAD.replace("{{NAME}}", file_name)
-    elif page_type == "eval":
+def get_javascript(args: Any, file_name: str) -> str:
+    if args.download != None:
+        # If args.downlaod is empty, use the name of the input file, otherwise use the user provided value
+        return JS_DOWNLOAD.replace("{{NAME}}", args.download or file_name)
+    elif args.eval:
         return JS_EVAL
-    elif page_type == "replace":
+    elif args.replace:
         return JS_REPLACE
+    elif args.custom != None:
+        return args.custom
     else:
-        raise Exception(f"Unknown page type: '{page_type}'")
+        raise Exception("Bug: Should not happen, since one of the payload parameters is required")
 
 PRINT_INFO_MESSAGES = True
 
@@ -149,8 +152,14 @@ def main() -> None:
     ap_output.add_argument("-O", "--open", action="store_true", help="if writing output to a file, try to immediately open the file in the default web browser afterwards")
     ap_output.add_argument("-q", "--quiet", action="store_true", help="minimize console output")
 
+    payload_option_visual_group = ap.add_argument_group("action to perform with the payload")
+    payload_option_mutex = payload_option_visual_group.add_mutually_exclusive_group(required=True)
+    payload_option_mutex.add_argument("--download", nargs="?", metavar="FILE_NAME", const="", help="show a download link to download the payload as a file. If you specify an argument that is used as the name of the file to download")
+    payload_option_mutex.add_argument("--eval", action="store_true", help="pass the payload to eval() to run it as JavaScript code")
+    payload_option_mutex.add_argument("--replace", action="store_true", help="replace the page's content with the payload. Use this to compress HTML pages")
+    payload_option_mutex.add_argument("--custom", metavar="YOUR_JAVASCRIPT_CODE", help="run your own action. Provide a JavaScript snippet that uses the decoded payload, which is stored in the 'og_data' variable. Note that data is a byte array, so you likely want to use 'new TextDecoder().decode(og_data)' to convert it to Unicode")
+
     ap_settings = ap.add_argument_group("settings")
-    ap_settings.add_argument("-t", "--type", default="replace", choices=["download", "eval", "replace"], help="the output type (default: replace)")
     ap_settings.add_argument("-c", "--compression", default="auto", choices=["auto", "none", "gzip"], help="how to compress the contents (default: auto)")
     ap_settings.add_argument("-e", "--encoding", default="auto", choices=["auto", "base64", "ascii85"], help="how to encode the binary data  (default: auto). base64 may not work for large contents (>65kB) due to different browser limitations")
     ap_settings.add_argument("--template", help="use this template file instead of the default one")
@@ -164,7 +173,7 @@ def main() -> None:
 
     template_file = args.template or DEFAULT_TEMPLATE_FILE
     file_name = os.path.basename(args.file)
-    java_script = get_javascript(args.type, file_name)
+    java_script = get_javascript(args, file_name)
 
     page_builder = PageBuilder(args.file, template_file, java_script, args.password, args.password_prompt)
     html_page = page_builder.build_page(args.compression, args.encoding)
