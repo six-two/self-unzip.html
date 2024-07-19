@@ -1,5 +1,8 @@
 {
     "github": {
         "silent": true
-    }
+    },
+    "buildCommand": "echo 'Nothing to do'",
+    "installCommand": "echo 'Nothing to do'",
+    "outputDirectory": "site"
 }

@@ -5,7 +5,7 @@ const fromHexString = (hexString) =>
   Uint8Array.from(hexString.match(/.{1,2}/g).map((byte) => parseInt(byte, 16)));
 
     window.onload = () => {
-        const cleartext = new TextEncoder('utf-8').encode( "The quick brown fox jumps over the lazy dog");
+        // const cleartext = new TextEncoder('utf-8').encode( "The quick brown fox jumps over the lazy dog");
     
         const password = "m";
         // encryptBytes(password, cleartext).then(encrypted => {        
