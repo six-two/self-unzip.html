@@ -1,0 +1,38 @@
+<pre>
+<script>
+function hexDump(data) {
+    let lines = [];
+    for (let i = 0; i < data.length; i += 16) {
+        let hexData = [], asciiData = []
+        for (let n = 0; n < 16; n += 1) {
+            if (i + n < data.length) {
+                const byte = data[i + n];
+                hexData.push(byte.toString(16).padStart(2, '0'));
+                asciiData.push(byte >= 32 && byte <= 126 ? String.fromCharCode(byte) : '.');
+            } else {
+                hexData.push("  ");
+                asciiData.push(" ");
+            }
+        }
+        lines.push(`${i.toString(16).padStart(6, '0')}  ${hexData.join(" ")}  |${asciiData.join(" ")}|`);
+    }
+    return lines.join('\n');
+}
+
+data = new Uint8Array([72, 101, 108, 108, 111, 32, 87, 111, 114, 108, 100, 33]); // "Hello World!"
+function createFullUint8Array() {
+    const arrayLength = 250; // Since we want numbers from 0 to 255
+    const fullUint8Array = new Uint8Array(arrayLength);
+
+    for (let i = 0; i < arrayLength; i++) {
+        fullUint8Array[i] = i;
+    }
+
+    return fullUint8Array;
+}
+data = createFullUint8Array();
+output = hexDump(data);
+console.log(output);
+document.write(output)
+</script>
+</pre>
