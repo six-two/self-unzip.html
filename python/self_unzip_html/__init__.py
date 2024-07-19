@@ -77,21 +77,21 @@ class PageBuilder:
         else:
             self.encryptor = None
 
-    def build_page(self, compression: str, encoding: str) -> str:
+    def build_page(self, compression: str, encoding: str, insert_debug_statements: bool) -> str:
         compression_list = ["none", "gzip"] if compression == "auto" else [compression]
         encoding_list = ["base64", "ascii85"] if encoding == "auto" else [encoding]
         variants = []
 
         for c in compression_list:
             for e in encoding_list:
-                page = self.build_page_no_auto(c, e)
+                page = self.build_page_no_auto(c, e, insert_debug_statements)
                 print_info(f"Testing combination: {c} & {e} => {len(page)} bytes")
                 variants.append(page)
 
         # Return the shortest result
         return sorted(variants, key=lambda x: len(x))[0]
 
-    def build_page_no_auto(self, compression: str, encoding: str) -> str:
+    def build_page_no_auto(self, compression: str, encoding: str, insert_debug_statements: bool) -> str:
         library_code = ""
         encoded_data = self.input_data
         js_payload_action = self.js_payload
@@ -126,19 +126,30 @@ class PageBuilder:
         else:
             raise Exception(f"Unknown encoding method '{compression}'")
 
-        glue_decrypt = ""
-        if self.encryptor:
-            glue_decrypt += "data=await decryptLoop(data);console.log('Decrypted:',data);"
-        if compression == "gzip":
-            glue_decrypt += "data=unzip(data);console.log('Unzipped:',data);"
+        if insert_debug_statements:
+            glue_decrypt = ""
+            if self.encryptor:
+                glue_decrypt += "data=await decryptLoop(data);console.log('Decrypted:',data);"
+            if compression == "gzip":
+                glue_decrypt += "data=unzip(data);console.log('Unzipped:',data);"
 
-        glue_code = f"""async function main(data) {{
+            glue_code = f"""async function main(data) {{
     console.log('Encoded:',data);
     data={decode_fn}(data);console.log('Decoded:',data);
     {glue_decrypt}
     action(data);
 }}main(c_data);""".replace("\n", "").replace("\r", "").replace("    ", "")
-        
+        else:
+            # We start with the input argument and then wrap it in more and more method calls
+            glue_code = "data"
+            glue_code = f"{decode_fn}({glue_code})"
+            if self.encryptor:
+                glue_code = f"await decryptLoop({glue_code})"
+            if compression == "gzip":
+                glue_code = f"unzip({glue_code})"
+            
+            glue_code = f"action({glue_code})"
+            glue_code = "async function main(data){" + glue_code + "};main(c_data);"
 
         return self.replace_in_template(library_code, glue_code, js_payload_action, encoded_data)
 
@@ -177,6 +188,7 @@ def main() -> None:
     ap_settings.add_argument("--template", help="use this template file instead of the default one")
     ap_settings.add_argument("-p", "--password", help="encrypt the compressed data using this password")
     ap_settings.add_argument("-P", "--password-prompt", default="Please enter the decryption password", help="provide your custom password prompt, that can for example be used to provide a password hint")
+    ap_settings.add_argument("--console-log", action="store_true", help="insert debug statements to see the output of the individual steps")
     args = ap.parse_args()
 
     if args.quiet:
@@ -188,7 +200,7 @@ def main() -> None:
     java_script = get_javascript(args, file_name)
 
     page_builder = PageBuilder(args.file, template_file, java_script, args.password, args.password_prompt)
-    html_page = page_builder.build_page(args.compression, args.encoding)
+    html_page = page_builder.build_page(args.compression, args.encoding, args.console_log)
 
     if args.output:
         with open(args.output, "w") as f:
@@ -196,6 +208,8 @@ def main() -> None:
 
         if args.open:
             url = f"file://{os.path.realpath(args.output)}"
+            if args.password:
+                url += f"#{args.password}"
             print_info(f"Opening {url} in webbrowser")
             import webbrowser
             webbrowser.open(url)
