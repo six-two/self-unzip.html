@@ -122,3 +122,4 @@ closure-compiler output/main.js --js_output_file output/main.min.js
     This should prevent anyone without the password from inspecting the file and for example seeing that it performs a drive by download and redirects to a specific site.
 - The debugging console messages are disabled by default, which results in nicer and shorter code.
     If enabled with the `--console-log` flag, the data will be formatted as hex dumps for easier debugging.
+- Added `--html`, `--html-file` and `--title` options to change the visual appearence of the initial page without needing a whole custom template.

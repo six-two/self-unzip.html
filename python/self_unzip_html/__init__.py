@@ -43,12 +43,15 @@ def print_info(message):
 
 
 class PageBuilder:
-    def __init__(self, input_file: str, template_file: str, js_payload: str, encryption_password: Optional[str], password_hint: str) -> None:
+    def __init__(self, input_file: str, template_file: str, js_payload: str, encryption_password: Optional[str], password_hint: str, page_title: str, page_html: str) -> None:
         try:
             with open(template_file, "r") as f:
                 self.template = f.read()
         except:
             raise Exception(f"Failed to load template file '{template_file}'. Try specifying a different file with the --template option")
+
+        self.template = self.template.replace("{{TITLE}}", page_title)
+        self.template = self.template.replace("{{HTML}}", page_html)
 
         try:
             if input_file == "-":
@@ -136,8 +139,7 @@ class PageBuilder:
             if compression == "gzip":
                 glue_decrypt += "data=unzip(data);log_hexdump('Unzipped',data);"
 
-            glue_code = f"""const log_hexdump=(name,data)=>console.log(`Hexdump of ${{name}}:\\n`, hexdump(data));
-            async function main(data) {{
+            glue_code = f"""async function main(data) {{
     log_hexdump('Encoded',data);
     data={decode_fn}(data);log_hexdump('Decoded',data);
     {glue_decrypt}
@@ -189,21 +191,45 @@ def main() -> None:
     ap_settings = ap.add_argument_group("settings")
     ap_settings.add_argument("-c", "--compression", default="auto", choices=["auto", "none", "gzip"], help="how to compress the contents (default: auto)")
     ap_settings.add_argument("-e", "--encoding", default="auto", choices=["auto", "base64", "ascii85"], help="how to encode the binary data  (default: auto). base64 may not work for large contents (>65kB) due to different browser limitations")
-    ap_settings.add_argument("--template", help="use this template file instead of the default one")
     ap_settings.add_argument("-p", "--password", help="encrypt the compressed data using this password")
     ap_settings.add_argument("-P", "--password-prompt", default="Please enter the decryption password", help="provide your custom password prompt, that can for example be used to provide a password hint")
     ap_settings.add_argument("--console-log", action="store_true", help="insert debug statements to see the output of the individual steps")
+    
+    ap_template = ap.add_argument_group("template settings")
+    ap_template.add_argument("--template", help="use this template file instead of the default one")
+    ap_template.add_argument("--title", default="Self Extracting Page", help="set the title of the HTML page")
+    initial_page_contents_mutex = ap_template.add_mutually_exclusive_group()
+    initial_page_contents_mutex.add_argument("--html", metavar="HTML_STRING", help="the HTML to show when the page is first loaded or if the unpacking fails")
+    initial_page_contents_mutex.add_argument("--html-file", metavar="FILE", help="like --html, but read the contents from the given file")
     args = ap.parse_args()
 
     if args.quiet:
         global PRINT_INFO_MESSAGES
         PRINT_INFO_MESSAGES = False
 
+    if args.html != None:
+        initial_page_contents = args.html
+    elif args.html_file != None:
+        try:
+            with open(args.html_file, "r") as f:
+                initial_page_contents = f.read()
+        except Exception as e:
+            print(f"[!] Failed to read file '{args.html_file}' from argument --html-file: {e}")
+            exit(1)
+    else:
+        # No argument give, use the default
+        initial_page_contents = "<h1>Unpacking...</h1><p>If you can read this, the extraction probably did not work. Please disable plugins (such as NoScript), which may block this page from running the extraction JavaScript code.</p>"
+        if args.console_log:
+            initial_page_contents += "<p>This page was built with debugging enabled, so you should be able to see the hexdumps of the intermediate steps in the browser's console (F12).</p>"
+        else:
+            initial_page_contents += "<p>Tip: You can use the --console-log option when building the page to show hexdumps of the intermediate steps in the browser console. This may help with debugging.</p>"
+
+
     template_file = args.template or DEFAULT_TEMPLATE_FILE
     file_name = os.path.basename(args.file)
     java_script = get_javascript(args, file_name)
 
-    page_builder = PageBuilder(args.file, template_file, java_script, args.password, args.password_prompt)
+    page_builder = PageBuilder(args.file, template_file, java_script, args.password, args.password_prompt, args.title, initial_page_contents)
     html_page = page_builder.build_page(args.compression, args.encoding, args.console_log)
 
     if args.output:
