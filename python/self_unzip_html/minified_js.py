@@ -22,3 +22,6 @@ b){if(31==a[0]&&139==a[1]&&8==a[2]){var c=a.subarray;31==a[0]&&139==a[1]&&8==a[2
 -4),b));return a}})();
 """
 HEXDUMP=r"""function log_hexdump(n,d){let g=[];for(let a=0;a<d.length;a+=16){let e=[],f=[];for(let b=0;16>b;b+=1)if(a+b<d.length){const c=d[a+b];e.push(c.toString(16).padStart(2,"0"));f.push(32<=c&&126>=c?String.fromCharCode(c):".")}else e.push("  "),f.push(" ");g.push(`${a.toString(16).padStart(6,"0")}  ${e.join(" ")}  |${f.join(" ")}|`)}console.log(`Hexdump of ${n}:\n${g.join("\n")}`)};"""
+
+# [].filter.constructor returns the "Function" function constructor. Calling Function(ARGUMENT_NAME, STRING_TO_EVAL)(); is like an eval in a global context. The STRING_TO_EVAL is decoded from the base64+split+reverse+join("-") format that the python code creates
+DECODE_AND_EVAL_ACTION="""[].filter[atob("ydWN0b3I=>Y29uc3R".split(">").reverse().join(""))]("og_data",atob("{{OBSCURED_ACTION}}".split("-").map(x=>x.split("").reverse().join("")).join("")))(og_data);"""

