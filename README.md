@@ -33,16 +33,6 @@ GZIP compression | yes, always | yes, can be disabled
 AES-GCM encryption | no | yes
 Automatic detection of most efficient algorithms | no | yes
 
-### Web version
-
-There is a bare-bones page generator written in plain HTML and JavaScript.
-To use it, just clone the repo and put the contents of the `site` directory somewhere in your web server directory.
-
-You can of course also use it with Python's built in web server:
-```bash
-python3 -m http.server --directory ./site/
-```
-
 ### Python version
 
 A Python script to generate self extracting web pages is under `python/main.py`.
@@ -64,7 +54,20 @@ Or if you wanted to password-protect it:
 self-unzip-html -t download -o psexec.html -p YourPasswordHere ~/Downloads/SysinternalsSuite/PsExec.exe
 ```
 
-## Encryption
+#### Phishing
+
+If you want to use it for phishing (sending a download link to a malicious file), the `--driveby-redirect` is likely what you want. It starts a download and immediately redirects to any URL you choose, so that it looks like the other site started the download:
+
+![Driveby Redirect Screenshot](./driveby-redirect-screenshot.png)
+
+Just search for a "thank you for downloading" page that does not start a download. There are many of them for software like Skype, AnyDesk, etc. Then rename your payload file to something an visitor of the download page would expect and create the HTML smuggling page:
+```bash
+self-unzip-html.py AnyDesk.exe -o anydesk-download.html --driveby-redirect https://anydesk.com/en/downloads/guide/thank-you --obscure-action
+```
+
+Host that HTML file on your server and link to it in your emails.
+
+#### Encryption
 
 Encryption uses AES-GCM for encryption and tamper detection and PBKDF2 with slightly over 1 million rounds of SHA-256 for password derivation.
 The code has not been audited, so use it with caution.
@@ -73,6 +76,18 @@ If data security is very important to you may want to manually encrypt it before
 You can automatically decrypt a page by adding the password as the hash in a URL like `encrypted.html#monkey123!`.
 The hash will not be sent to the server, so your password may only be stored locally (in your browsing history).
 Otherwise a prompt will ask you for the password.
+
+### Web version
+
+There is a bare-bones page generator written in plain HTML and JavaScript.
+To use it, just clone the repo and put the contents of the `site` directory somewhere in your web server directory.
+
+You can of course also use it with Python's built in web server:
+```bash
+python3 -m http.server --directory ./site/
+```
+
+I also host it via Vercel at <https://self-extracting-html.six-two.dev/>.
 
 ## JavaScript code
 
@@ -112,12 +127,12 @@ closure-compiler output/main.js --js_output_file output/main.min.js
 
 ## Notable changes
 
-### HEAD
+### Version 0.2.0
 
-- Replaced the `--type` parameter with specific flags like `--download`, `--driveby-redirect`, `--eval`, `--replace`, and `--custom`
-    - `--download` now has an optional parameter that allows you to change the file's name
-    - `--driveby-redirect` allows you to perform a driveby download an redirect the visitor immediately to another page
-    - `--custom` allows you to provide your own JavaScript code, which is useful for not implemented techniques or special usecases
+- **Breaking change**: Replaced the `--type` parameter with specific flags like `--download`, `--driveby-redirect`, `--eval`, `--replace`, and `--custom`.
+    - `--download` now has an optional parameter that allows you to change the file's name.
+    - `--driveby-redirect` allows you to perform a driveby download and redirect the visitor immediately to another page.
+    - `--custom` allows you to provide your own JavaScript code, which is useful for not implemented techniques or special usecases.
 - Password protection now encrypts the payload action too.
     This should prevent anyone without the password from inspecting the file and for example seeing that it performs a drive by download and redirects to a specific site.
 - The debugging console messages are disabled by default, which results in nicer and shorter code.
