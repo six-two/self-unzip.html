@@ -21,7 +21,3 @@ d;p=null;break}else{m=e-254;if(264<e){e-=257;var y=M[e];m=t(a,d,(1<<y)-1)+O[e];d
 b){if(31==a[0]&&139==a[1]&&8==a[2]){var c=a.subarray;31==a[0]&&139==a[1]&&8==a[2]||u(6,"invalid gzip data");var g=a[3],f=10;g&4&&(f+=a[10]|(a[11]<<8)+2);for(var q=(g>>3&1)+(g>>4&1);0<q;q-=!a[f++]);c=c.call(a,f+(g&2),-8);b||(b=a.length,b=new n((a[b-4]|a[b-3]<<8|a[b-2]<<16|a[b-1]<<24)>>>0));a=K(c,b)}else 8!=(a[0]&15)||7<a[0]>>4||(a[0]<<8|a[1])%31?a=K(a,b):((8!=(a[0]&15)||7<a[0]>>>4||(a[0]<<8|a[1])%31)&&u(6,"invalid zlib data"),a[1]&32&&u(6,"invalid zlib data: preset dictionaries not supported"),a=K(a.subarray(2,
 -4),b));return a}})();
 """
-HEXDUMP=r"""function log_hexdump(n,d){let g=[];for(let a=0;a<d.length;a+=16){let e=[],f=[];for(let b=0;16>b;b+=1)if(a+b<d.length){const c=d[a+b];e.push(c.toString(16).padStart(2,"0"));f.push(32<=c&&126>=c?String.fromCharCode(c):".")}else e.push("  "),f.push(" ");g.push(`${a.toString(16).padStart(6,"0")}  ${e.join(" ")}  |${f.join(" ")}|`)}console.log(`Hexdump of ${n}:\n${g.join("\n")}`)};"""
-
-# [].filter.constructor returns the "Function" function constructor. Calling Function(ARGUMENT_NAME, STRING_TO_EVAL)(); is like an eval in a global context. The STRING_TO_EVAL is decoded from the base64+split+reverse+join("-") format that the python code creates
-DECODE_AND_EVAL_ACTION="""[].filter[atob("ydWN0b3I=>Y29uc3R".split(">").reverse().join(""))]("og_data",atob("{{OBSCURED_ACTION}}".split("-").map(x=>x.split("").reverse().join("")).join("")))(og_data);"""

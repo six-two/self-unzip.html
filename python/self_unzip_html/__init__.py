@@ -7,15 +7,11 @@ import os
 import sys
 from typing import Optional, Any
 # local
-from .minified_js import B64DECODE, B85DECODE, DECRYPT, UNZIP, HEXDUMP, DECODE_AND_EVAL_ACTION
+from .minified_js import B64DECODE, B85DECODE, DECRYPT, UNZIP
+from .static_js import HEXDUMP, DECODE_AND_EVAL_ACTION, JS_DOWNLOAD, JS_DRIVEBY_REDIRECT, JS_EVAL, JS_REPLACE
 
 SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
 DEFAULT_TEMPLATE_FILE = os.path.join(SCRIPT_DIR, "template.html")
-
-JS_EVAL = "setTimeout(new TextDecoder().decode(og_data))" # setTimeout works like eval (in a global context) if you pass it a string, but it is less suspicious
-JS_REPLACE = 'setTimeout(()=>{let n=document.open("text/html","replace");n.write(new TextDecoder().decode(og_data));n.close()}, 50);' # since decryption is async we do not catch the onload event anymore
-JS_DOWNLOAD = 'let b=new Blob([og_data],{type:"application/octet-stream"});let u=URL.createObjectURL(b);document.body.innerHTML=`<h1>Unpacked {{NAME}}</h1><a href="${u}" download="{{NAME}}">Click here to download</a>`'
-JS_DRIVEBY_REDIRECT = 'let b=new Blob([og_data],{type:"application/octet-stream"});let u=URL.createObjectURL(b);document.body.innerHTML=`<a href="${u}" download="{{NAME}}" id="auto-click"></a>`;document.getElementById("auto-click").click();location.href="{{REDIRECT_URL}}"'
 
 
 def get_javascript(args: Any, file_name: str) -> str:
