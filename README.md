@@ -21,6 +21,8 @@ It is entirely client-site, your files do not get uploaded to a server.
 
 ## Installation
 
+There are both a web and a python version. The web version is not actively developed anymore and very bare bones, but easy to use and requires no installation. The Python version has more features and is generally recommended.
+
 ### Current feature comparision
 
 Currently the python version has the most features.
@@ -36,9 +38,10 @@ Automatic detection of most efficient algorithms | no | yes
 ### Python version
 
 A Python script to generate self extracting web pages is under `python/main.py`.
-It just requires a modern Python version (probably Python3.9+) and has no required external dependencies (but you need to install `pycryptodomex` if you want to encrypt contents).
+It just requires a modern Python version (probably Python3.9+) and has no mandatory external dependencies.
+But if you want to use the encryption feature, you need to install `pycryptodomex` with pip.
 
-You can also install it with `pip`:
+You can install it with `pip`:
 
 ```bash
 python3 -m pip install -U self-unzip-html
@@ -49,10 +52,12 @@ Example usage of the pip package:
 self-unzip-html -t download -o psexec.html ~/Downloads/SysinternalsSuite/PsExec.exe
 ```
 
-Or if you wanted to password-protect it:
+Or if you wanted to password-protect the output:
 ```bash
 self-unzip-html -t download -o psexec.html -p YourPasswordHere ~/Downloads/SysinternalsSuite/PsExec.exe
 ```
+
+You can show all flags with the `--help` flag and can see some example commands in `./test.sh`.
 
 #### Phishing
 
@@ -76,6 +81,18 @@ If data security is very important to you may want to manually encrypt it before
 You can automatically decrypt a page by adding the password as the hash in a URL like `encrypted.html#monkey123!`.
 The hash will not be sent to the server, so your password may only be stored locally (in your browsing history).
 Otherwise a prompt will ask you for the password.
+
+#### Custom actions
+
+With the `--custom` flag you can specify your own JavaScript that should handle the unpacked data. The data is passed via the `og_data` parameter.
+The value is an Uint8Array which represents the bytes of the input file. If you want to interpret it as UTF-8 text and convert it to a string, you can use `new TextDecoder().decode(og_data)`.
+If you want to build your payload based on one of the builtin payloads, you can find them in `python/self_unzip_html/static_js.py`
+
+When debugging your own payload it can be useful to see go through it step by step. For this I find it easiest to create an page with:
+```bash
+self-unzip-html README.md --custom 'window.og_data = og_data' -o test_custom.html
+```
+The resulting page exposes og_data in the global scope. You can then paste your payload into the JavaScript console piece by piece and inspect the output or DOM in between.
 
 ### Web version
 
@@ -126,6 +143,10 @@ closure-compiler output/main.js --js_output_file output/main.min.js
 ```
 
 ## Notable changes
+
+### Head
+
+- Added `--show-text` action, which shows the payload as plain text
 
 ### Version 0.2.0
 

@@ -8,7 +8,7 @@ import sys
 from typing import Optional, Any
 # local
 from .minified_js import B64DECODE, B85DECODE, DECRYPT, UNZIP
-from .static_js import HEXDUMP, DECODE_AND_EVAL_ACTION, JS_DOWNLOAD, JS_DRIVEBY_REDIRECT, JS_EVAL, JS_REPLACE
+from .static_js import HEXDUMP, DECODE_AND_EVAL_ACTION, JS_DOWNLOAD, JS_DRIVEBY_REDIRECT, JS_EVAL, JS_REPLACE, JS_SHOW_TEXT
 
 SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
 DEFAULT_TEMPLATE_FILE = os.path.join(SCRIPT_DIR, "template.html")
@@ -22,6 +22,8 @@ def get_javascript(args: Any, file_name: str) -> str:
         return JS_EVAL
     elif args.replace:
         return JS_REPLACE
+    elif args.show_text:
+        return JS_SHOW_TEXT
     elif args.driveby_redirect != None:
         return JS_DRIVEBY_REDIRECT.replace("{{REDIRECT_URL}}", args.driveby_redirect).replace("{{NAME}}", file_name)
     elif args.custom != None:
@@ -172,6 +174,7 @@ class PageBuilder:
 
 
 def main() -> None:
+    # @TODO: Support multiple input files for certain options (download, driveby, etc)?
     ap = argparse.ArgumentParser()
     # ap_input = ap.add_argument_group("input options")
     # ap_input_mutex = ap_input.add_mutually_exclusive_group(required=True)
@@ -188,6 +191,7 @@ def main() -> None:
     payload_option_mutex.add_argument("--download", nargs="?", metavar="FILE_NAME", const="", help="show a download link to download the payload as a file. If you specify an argument that is used as the name of the file to download")
     payload_option_mutex.add_argument("--eval", action="store_true", help="pass the payload to eval() to run it as JavaScript code")
     payload_option_mutex.add_argument("--replace", action="store_true", help="replace the page's content with the payload. Use this to compress HTML pages")
+    payload_option_mutex.add_argument("--show-text", action="store_true", help="use this to show plain text. Unlike --replace this does not interpret HTML tags and does not change whitespace")
     payload_option_mutex.add_argument("--driveby-redirect", metavar="REDIRECT_URL", help="downlaod the payload as a file in the background and immediately redirect the user to another site. Useful for phishing")
     payload_option_mutex.add_argument("--custom", metavar="YOUR_JAVASCRIPT_CODE", help="run your own action. Provide a JavaScript snippet that uses the decoded payload, which is stored in the 'og_data' variable. Note that data is a byte array, so you likely want to use 'new TextDecoder().decode(og_data)' to convert it to Unicode")
 

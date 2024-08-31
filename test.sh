@@ -28,6 +28,7 @@ self-unzip-html.py README.md -o test_b85_gzip_encrypt.html -e ascii85 -c gzip -p
 # other modes
 echo 'alert("Looks like it still works :)")' | self-unzip-html.py - -o test_eval_b64_gzip.html -e base64 -c gzip --eval
 self-unzip-html.py README.md -o test_download_b85_encrypt.html -e ascii85 -c none -p test --download
+self-unzip-html README.md -e base64 -c none --show-text -o test_show.html
 self-unzip-html.py README.md -o test_custom.html -e ascii85 -c none -p test --custom 'alert(og_data)'
 # Usually you want to redirect to a thank you page, since this legitimizes the downlod you just started
 self-unzip-html.py README.md -o test_driveby.html -e ascii85 -c none -p test --driveby-redirect https://anydesk.com/en/downloads/guide/thank-you

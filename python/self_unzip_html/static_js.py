@@ -10,7 +10,9 @@ DECODE_AND_EVAL_ACTION="""[].filter[atob("ydWN0b3I=>Y29uc3R".split(">").reverse(
 JS_EVAL = "setTimeout(new TextDecoder().decode(og_data))"
 
 # since decryption is async we do not catch the onload event anymore
-JS_REPLACE = 'setTimeout(()=>{let n=document.open("text/html","replace");n.write(new TextDecoder().decode(og_data));n.close()}, 50);'
+JS_REPLACE = 'setTimeout(()=>{let n=document.open();n.write(new TextDecoder().decode(og_data));n.close()}, 50);'
+
+JS_SHOW_TEXT = 'setTimeout(()=>{let d=document.open(); d.write("<!DOCTYPE html><html><body><style>textarea {width:100vw;height:100vh;padding:0px;margin:0px;border:none;outline: none;white-space: pre-wrap; overflow-x: none;}</style><textarea readonly></textarea></body></html>");d.querySelector("textarea").value=new TextDecoder().decode(og_data)}, 50);'
 
 JS_DOWNLOAD = 'let b=new Blob([og_data],{type:"application/octet-stream"});let u=URL.createObjectURL(b);document.body.innerHTML=`<h1>Unpacked {{NAME}}</h1><a href="${u}" download="{{NAME}}">Click here to download</a>`'
 
