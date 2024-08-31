@@ -175,7 +175,7 @@ class PageBuilder:
 
 def main() -> None:
     # @TODO: Support multiple input files for certain options (download, driveby, etc)?
-    ap = argparse.ArgumentParser()
+    ap = argparse.ArgumentParser(description="This tools can create self-decompressing HTML pages, that can be used to minify documents or circumvent web proxy download restrictions and filtering.")
     # ap_input = ap.add_argument_group("input options")
     # ap_input_mutex = ap_input.add_mutually_exclusive_group(required=True)
     ap.add_argument("file", help="the file to encode. Use '-' to read from standard input")
@@ -208,7 +208,7 @@ def main() -> None:
     initial_page_contents_mutex = ap_template.add_mutually_exclusive_group()
     initial_page_contents_mutex.add_argument("--html", metavar="HTML_STRING", help="the HTML to show when the page is first loaded or if the unpacking fails")
     initial_page_contents_mutex.add_argument("--html-file", metavar="FILE", help="like --html, but read the contents from the given file")
-    ap_template.add_argument("--obscure-action", action="store_true", help="obscures the action that is performed decoding and basically evaling the code")
+    ap_template.add_argument("--obscure-action", action="store_true", help="obscures the action JavaScript code")
     args = ap.parse_args()
 
     if args.quiet:

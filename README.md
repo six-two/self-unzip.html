@@ -49,12 +49,22 @@ python3 -m pip install -U self-unzip-html
 
 Example usage of the pip package:
 ```bash
-self-unzip-html -t download -o psexec.html ~/Downloads/SysinternalsSuite/PsExec.exe
+self-unzip-html --download -o psexec.html ~/Downloads/SysinternalsSuite/PsExec.exe
 ```
 
 Or if you wanted to password-protect the output:
 ```bash
-self-unzip-html -t download -o psexec.html -p YourPasswordHere ~/Downloads/SysinternalsSuite/PsExec.exe
+self-unzip-html --download -o psexec.html -p YourPasswordHere ~/Downloads/SysinternalsSuite/PsExec.exe
+```
+
+Alternatively, you can also the `Dockerfile`:
+```bash
+docker build -t self-unzip-html .
+```
+
+Usage of docker image:
+```bash
+docker run --rm -v "$PWD:/share" self-unzip-html --download -o psexec.html ./PsExec.exe 
 ```
 
 You can show all flags with the `--help` flag and can see some example commands in `./test.sh`.
