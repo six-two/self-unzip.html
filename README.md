@@ -41,10 +41,18 @@ A Python script to generate self extracting web pages is under `python/main.py`.
 It just requires a modern Python version (probably Python3.9+) and has no mandatory external dependencies.
 But if you want to use the encryption feature, you need to install `pycryptodomex` with pip.
 
-You can install it with `pip`:
+You can install it with `pip` or docker.
 
+#### pip
+
+To install the latest release:
 ```bash
 python3 -m pip install -U self-unzip-html
+```
+
+If you want to have the bleeding edge version (`main` branch), you can clone the repository and run:
+```bash
+python3 -m pip install .
 ```
 
 Example usage of the pip package:
@@ -57,7 +65,14 @@ Or if you wanted to password-protect the output:
 self-unzip-html --download -o psexec.html -p YourPasswordHere ~/Downloads/SysinternalsSuite/PsExec.exe
 ```
 
-Alternatively, you can also the `Dockerfile`:
+#### Docker
+
+You can use the image pushed to ghcr.io:
+```bash
+docker run --rm -v "$PWD:/share" ghcr.io/six-two/self-unzip-html --download -o psexec.html ./PsExec.exe 
+```
+
+To use the bleeding edge version (`main` branch), you can build the `Dockerfile`:
 ```bash
 docker build -t self-unzip-html .
 ```
@@ -154,8 +169,9 @@ closure-compiler output/main.js --js_output_file output/main.min.js
 
 ## Notable changes
 
-### Head
+### Version 0.2.1
 
+- Added `Dockerfile` and published image `docker pull ghcr.io/six-two/self-unzip-html`
 - Added `--show-text` action, which shows the payload as plain text
 
 ### Version 0.2.0
