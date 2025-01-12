@@ -7,11 +7,14 @@ This [repo](https://github.com/six-two/self-unzip.html) contains tools to create
 It works by taking a payload, compressing it, and encoding the results using ASCII85.
 It then puts the resulting string in a template file, that contains the code to decode and decompress the payload again.
 
-Currently there are three actions implemented, that can be executed, after the payload is decoded:
+Currently there are multiple actions implemented, that can be executed, after the payload is decoded:
 
-- `eval`: Execute payload as JavaScript code (example usecase: obfuscate malicious JS code)
-- `replace`: Show payload as HTML page (example usecase: compress a big web page)
-- `download`: Download the payload as a file (example usecase: bypass antivirus / filters)
+- `--eval`: Execute payload as JavaScript code (example usecase: obfuscate malicious JS code)
+- `--replace`: Show payload as HTML page (example usecase: compress a big web page)
+- `--show-text`: Show payload as text (example usecase: compress a big text file)
+- `--download`: Download the payload as a file (example usecase: bypass antivirus / filters)
+- `--driveby-redirect <REDIRECT_URL>`: Perform a driveby download and redirect to the `REDIRECT_URL` (example usecase: phishing)
+- `--custom <YOUR_JAVASCRIPT_CODE>`: This allows you to write your own action as JavaScript code
 
 ## Demo
 
