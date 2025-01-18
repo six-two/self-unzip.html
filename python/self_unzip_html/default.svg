@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 400" width="600" height="400">
+  <rect width="100%" height="100%" fill="black"/>
+  <g opacity="0.2">
+    <line x1="0" y1="0" x2="600" y2="400" stroke="#0f0" stroke-width="1"/>
+    <line x1="600" y1="0" x2="0" y2="400" stroke="#0f0" stroke-width="1"/>
+    <line x1="300" y1="0" x2="300" y2="400" stroke="#0f0" stroke-width="2"/>
+    <line x1="0" y1="200" x2="600" y2="200" stroke="#0f0" stroke-width="2"/>
+  </g>
+
+  <g stroke="#0f0" stroke-width="2">
+    <path d="M100 50 H500 V350 H100 Z"/>
+    <line x1="100" y1="50" x2="150" y2="100"/>
+    <line x1="500" y1="50" x2="450" y2="100"/>
+    <line x1="100" y1="350" x2="150" y2="300"/>
+    <line x1="500" y1="350" x2="450" y2="300"/>
+    <line x1="150" y1="100" x2="150" y2="300"/>
+    <line x1="450" y1="100" x2="450" y2="300"/>
+  </g>
+
+  <g fill="#0f0">
+    <path d="M300 150 C275 150, 250 175, 250 200 L250 250 C250 275, 275 300, 300 300 C325 300, 350 275, 350 250 L350 200 C350 175, 325 150, 300 150 Z"/>
+    <rect x="290" y="200" width="20" height="50" fill="#0f0"/>
+  </g>
+
+  <text x="150" y="50" font-family="monospace" font-size="36" fill="#0f0" opacity="0.8">HTML Smuggling</text>
+  <text x="152" y="52" font-family="monospace" font-size="36" fill="red" opacity="0.6">HTML Smuggling</text>
+</svg>

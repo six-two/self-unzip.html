@@ -68,6 +68,12 @@ Or if you wanted to password-protect the output:
 self-unzip-html --download -o psexec.html -p YourPasswordHere ~/Downloads/SysinternalsSuite/PsExec.exe
 ```
 
+Instead of HTML pages, you can also embedd a HTML smuggling payload in an SVG file:
+```bash
+self-unzip-html -O psexec.html --download -o 
+smuggling.svg --svg
+```
+
 #### Docker
 
 You can use the image pushed to ghcr.io:
@@ -170,7 +176,18 @@ Otherwise minify the code (may require you to install an external minifier like 
 closure-compiler output/main.js --js_output_file output/main.min.js
 ```
 
+## License
+
+The `python/self_unzip_html/template.svg` image was generated using the ChatGPT prompt `make me a really cool looking SVG for a hacking tool. The cooler the better` with me just replacing some text.
+So to my understanding it is not copyrightable and you can do with it what you want :)
+
+The rest of the project is under the MIT license, so you can do whatever as long as you credit my work to me.
+
 ## Notable changes
+
+### Head
+
+- Added `--svg` option and ported the `--download` option to work in SVGs
 
 ### Version 0.2.1
 

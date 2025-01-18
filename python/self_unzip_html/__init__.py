@@ -8,16 +8,18 @@ import sys
 from typing import Optional, Any
 # local
 from .minified_js import B64DECODE, B85DECODE, DECRYPT, UNZIP
-from .static_js import HEXDUMP, DECODE_AND_EVAL_ACTION, JS_DOWNLOAD, JS_DRIVEBY_REDIRECT, JS_EVAL, JS_REPLACE, JS_SHOW_TEXT
+from .static_js import HEXDUMP, DECODE_AND_EVAL_ACTION, JS_DOWNLOAD, JS_DOWNLOAD_SVG, JS_DRIVEBY_REDIRECT, JS_EVAL, JS_REPLACE, JS_SHOW_TEXT
 
 SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
+DEFAULT_SVG_FILE = os.path.join(SCRIPT_DIR, "default.svg")
 DEFAULT_TEMPLATE_FILE = os.path.join(SCRIPT_DIR, "template.html")
 
 
-def get_javascript(args: Any, file_name: str) -> str:
+def get_javascript(args: Any, file_name: str, is_svg: bool) -> str:
     if args.download != None:
         # If args.downlaod is empty, use the name of the input file, otherwise use the user provided value
-        return JS_DOWNLOAD.replace("{{NAME}}", args.download or file_name)
+        base_code = JS_DOWNLOAD_SVG if is_svg else JS_DOWNLOAD
+        return base_code.replace("{{NAME}}", args.download or file_name)
     elif args.eval:
         return JS_EVAL
     elif args.replace:
@@ -41,15 +43,8 @@ def print_info(message):
 
 
 class PageBuilder:
-    def __init__(self, input_file: str, template_file: str, js_payload: str, encryption_password: Optional[str], password_hint: str, page_title: str, page_html: str, obscure_action: bool) -> None:
-        try:
-            with open(template_file, "r") as f:
-                self.template = f.read()
-        except:
-            raise Exception(f"Failed to load template file '{template_file}'. Try specifying a different file with the --template option")
-
-        self.template = self.template.replace("{{TITLE}}", page_title)
-        self.template = self.template.replace("{{HTML}}", page_html)
+    def __init__(self, input_file: str, template: str, js_payload: str, encryption_password: Optional[str], password_hint: str, obscure_action: bool) -> None:
+        self.template = template
         self.obscure_action = obscure_action
 
         try:
@@ -162,6 +157,10 @@ class PageBuilder:
             glue_code = f"action({glue_code})"
             glue_code = "async function main(data){" + glue_code + "};main(c_data);"
 
+        #@TODO only in SVG
+        library_code_as_base64 = base64.b64encode(library_code.encode()).decode()
+        library_code = f"eval(atob('{library_code_as_base64}'))"
+
         return self.replace_in_template(library_code, glue_code, js_payload_action, encoded_data)
 
     def replace_in_template(self, library_code: str, glue_code: str, payload_code: str, encoded_data: bytes) -> str:
@@ -203,7 +202,9 @@ def main() -> None:
     ap_settings.add_argument("--console-log", action="store_true", help="insert debug statements to see the output of the individual steps")
     
     ap_template = ap.add_argument_group("template settings")
-    ap_template.add_argument("--template", help="use this template file instead of the default one")
+    ap_template_mutex = ap_template.add_mutually_exclusive_group()
+    ap_template_mutex.add_argument("--svg", metavar="SVG_FILE_PATH", nargs="?", const=DEFAULT_SVG_FILE, help="use this SVG instead of a normal HTML page for the smuggling")
+    ap_template_mutex.add_argument("--template", help="use this template file instead of the default one")
     ap_template.add_argument("--title", default="Self Extracting Page", help="set the title of the HTML page")
     initial_page_contents_mutex = ap_template.add_mutually_exclusive_group()
     initial_page_contents_mutex.add_argument("--html", metavar="HTML_STRING", help="the HTML to show when the page is first loaded or if the unpacking fails")
@@ -235,9 +236,38 @@ def main() -> None:
 
     template_file = args.template or DEFAULT_TEMPLATE_FILE
     file_name = os.path.basename(args.file)
-    java_script = get_javascript(args, file_name)
+    is_svg = args.svg != None
+    java_script = get_javascript(args, file_name, is_svg)
 
-    page_builder = PageBuilder(args.file, template_file, java_script, args.password, args.password_prompt, args.title, initial_page_contents, args.obscure_action)
+    if is_svg:
+        try:
+            with open(args.svg, "r") as f:
+                template = f.read()
+        except:
+            raise Exception(f"Failed to load SVG file '{args.svg}'. Try specifying a different file with the --svg option")
+
+        template = template.replace("</svg>", """
+    <script>
+        {{LIBRARY_CODE}}
+        // My code (c) six-two, MIT License
+        const action = (og_data) => { {{PAYLOAD_CODE}} };
+        const c_data = "{{DATA}}";
+        {{GLUE_CODE}}
+    </script>
+</svg>
+""")
+    else:
+        try:
+            with open(template_file, "r") as f:
+                template = f.read()
+        except:
+            raise Exception(f"Failed to load template file '{template_file}'. Try specifying a different file with the --template option")
+
+        template = template.replace("{{TITLE}}", args.title)
+        template = template.replace("{{HTML}}", initial_page_contents)
+
+
+    page_builder = PageBuilder(args.file, template, java_script, args.password, args.password_prompt, args.obscure_action)
     html_page = page_builder.build_page(args.compression, args.encoding, args.console_log)
 
     if args.output:
