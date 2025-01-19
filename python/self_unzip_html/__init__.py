@@ -8,12 +8,14 @@ import sys
 from typing import Optional, Any
 # local
 from .minified_js import B64DECODE, B85DECODE, DECRYPT, UNZIP
-from .static_js import HEXDUMP, DECODE_AND_EVAL_ACTION, JS_DOWNLOAD, JS_DOWNLOAD_SVG, JS_DRIVEBY_REDIRECT, JS_EVAL, JS_REPLACE, JS_SHOW_TEXT
+from .static_js import HEXDUMP, DECODE_AND_EVAL_ACTION, JS_DOWNLOAD, JS_DOWNLOAD_SVG, JS_DRIVEBY_REDIRECT, JS_DRIVEBY_REDIRECT_SVG, JS_EVAL, JS_REPLACE, JS_REPLACE_SVG, JS_SHOW_TEXT, JS_SHOW_TEXT_SVG
 
 SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
 DEFAULT_SVG_FILE = os.path.join(SCRIPT_DIR, "default.svg")
 DEFAULT_TEMPLATE_FILE = os.path.join(SCRIPT_DIR, "template.html")
 
+class OperationNotImplemented(Exception):
+    pass
 
 def get_javascript(args: Any, file_name: str, is_svg: bool) -> str:
     if args.download != None:
@@ -23,11 +25,15 @@ def get_javascript(args: Any, file_name: str, is_svg: bool) -> str:
     elif args.eval:
         return JS_EVAL
     elif args.replace:
-        return JS_REPLACE
+        if is_svg:
+            raise OperationNotImplemented("Setting the innerHTML of a svg.text always resulted in errors. Use --show-text or remove the --svg flag")
+        else:
+            return JS_REPLACE
     elif args.show_text:
-        return JS_SHOW_TEXT
+        return JS_SHOW_TEXT_SVG if is_svg else JS_SHOW_TEXT
     elif args.driveby_redirect != None:
-        return JS_DRIVEBY_REDIRECT.replace("{{REDIRECT_URL}}", args.driveby_redirect).replace("{{NAME}}", file_name)
+        base_code = JS_DRIVEBY_REDIRECT_SVG if is_svg else JS_DRIVEBY_REDIRECT
+        return base_code.replace("{{REDIRECT_URL}}", args.driveby_redirect).replace("{{NAME}}", file_name)
     elif args.custom != None:
         return args.custom
     else:
@@ -172,7 +178,7 @@ class PageBuilder:
         )
 
 
-def main() -> None:
+def main_wrapped() -> None:
     # @TODO: Support multiple input files for certain options (download, driveby, etc)?
     ap = argparse.ArgumentParser(description="This tools can create self-decompressing HTML pages, that can be used to minify documents or circumvent web proxy download restrictions and filtering.")
     # ap_input = ap.add_argument_group("input options")
@@ -285,6 +291,12 @@ def main() -> None:
         print(html_page)
         if args.open:
             print_info("Ignoring -O/--open since the output is stdout")
+
+def main():
+    try:
+        main_wrapped()
+    except OperationNotImplemented as e:
+        print(f"[-] This operation is not implemented for this combination of flags. Reason: {e}")
 
 
 if __name__ == "__main__":
