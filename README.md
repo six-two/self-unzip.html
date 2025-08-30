@@ -187,6 +187,7 @@ The rest of the project is under the MIT license, so you can do whatever as long
 
 ### Head
 
+- Refactoring of the python code to make it usable as a library
 - Added `--svg` option and ported the `--download` option to work in SVGs
 
 ### Version 0.2.1

@@ -15,19 +15,10 @@ DEFAULT_TEMPLATE_FILE = os.path.join(SCRIPT_DIR, "template.html")
 
 
 class PageBuilder:
-    def __init__(self, input_file: str, template: str, js_payload: str, encryption_password: Optional[str], password_hint: str, obscure_action: bool) -> None:
+    def __init__(self, input_data: bytes, template: str, js_payload: str, encryption_password: Optional[str], password_hint: str, obscure_action: bool) -> None:
         self.template = template
         self.obscure_action = obscure_action
-
-        try:
-            if input_file == "-":
-                # Read the buffer to get data as binary
-                self.input_data = sys.stdin.buffer.read()
-            else:
-                with open(input_file, "rb") as f:
-                    self.input_data = f.read()
-        except:
-            raise Exception(f"Failed to load input file '{input_file}'")
+        self.input_data = input_data
 
         self.js_payload = js_payload
         # Nonce reuse should be save, since only one of the results should be used (we may need to encrypt multiple time if some parameters have the `auto` value)

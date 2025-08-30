@@ -7,6 +7,7 @@ from typing import Any
 from .static_js import JS_DOWNLOAD, JS_DOWNLOAD_SVG, JS_DRIVEBY_REDIRECT, JS_DRIVEBY_REDIRECT_SVG, JS_EVAL, JS_REPLACE, JS_SHOW_TEXT, JS_SHOW_TEXT_SVG
 from .util import print_info, PRINT_INFO_MESSAGES
 from .page_builder import PageBuilder
+from .template import get_svg_template, get_html_template
 
 SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
 DEFAULT_SVG_FILE = os.path.join(SCRIPT_DIR, "default.svg")
@@ -78,9 +79,9 @@ def main_wrapped() -> None:
     ap_template.add_argument("--obscure-action", action="store_true", help="obscures the action JavaScript code")
     args = ap.parse_args()
 
-    if args.quiet:
+    if not args.quiet:
         global PRINT_INFO_MESSAGES
-        PRINT_INFO_MESSAGES = False
+        PRINT_INFO_MESSAGES = True
 
     if args.html != None:
         initial_page_contents = args.html
@@ -107,33 +108,28 @@ def main_wrapped() -> None:
 
     if is_svg:
         try:
-            with open(args.svg, "r") as f:
-                template = f.read()
+            template = get_svg_template(args.svg)
         except:
             raise Exception(f"Failed to load SVG file '{args.svg}'. Try specifying a different file with the --svg option")
-
-        template = template.replace("</svg>", """
-    <script>
-        {{LIBRARY_CODE}}
-        // My code (c) six-two, MIT License
-        const action = (og_data) => { {{PAYLOAD_CODE}} };
-        const c_data = "{{DATA}}";
-        {{GLUE_CODE}}
-    </script>
-</svg>
-""")
     else:
         try:
-            with open(template_file, "r") as f:
-                template = f.read()
+            template = get_html_template(template_file, args.title, initial_page_contents)
         except:
             raise Exception(f"Failed to load template file '{template_file}'. Try specifying a different file with the --template option")
 
-        template = template.replace("{{TITLE}}", args.title)
-        template = template.replace("{{HTML}}", initial_page_contents)
+    try:
+        if args.file == "-":
+            # Read the buffer to get data as binary
+            input_data = sys.stdin.buffer.read()
+        else:
+            with open(args.file, "rb") as f:
+                input_data = f.read()
+    except:
+        print(f"[!] Failed to load input file '{args.file}'")
+        exit(1)
 
 
-    page_builder = PageBuilder(args.file, template, java_script, args.password, args.password_prompt, args.obscure_action)
+    page_builder = PageBuilder(input_data, template, java_script, args.password, args.password_prompt, args.obscure_action)
     html_page = page_builder.build_page(args.compression, args.encoding, args.console_log)
 
     if args.output:

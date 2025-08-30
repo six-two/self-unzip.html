@@ -1,6 +1,6 @@
 import sys
 
-PRINT_INFO_MESSAGES = True
+PRINT_INFO_MESSAGES = False
 
 def print_info(message):
     # Since the output may be written to stdout, we write info messages to stderr.
