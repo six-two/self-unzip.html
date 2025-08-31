@@ -24,6 +24,7 @@ async function fndrv(password_str, iv_bytes) {
 }
 
 async function fndec(password_str, payload_bytes) {
+    console.log("Decrypting with password", password_str);
     const iv_bytes = payload_bytes.slice(0, 12);
     const ciphertext_bytes = payload_bytes.slice(12)
     const key = await fndrv(password_str, iv_bytes);
@@ -42,18 +43,27 @@ async function decryptLoop(data_bytes) {
     }
 
     let pw;
-    if (location.hash) {
-        pw = location.hash.slice(1); // remove leading #
-    } else {
-        pw = prompt("PW_PROMPT");
+    // The URL hash is the sipmlest way to make automatically decrypting links 
+    const urlHash = (location.hash || "#").slice(1); // remove leading #
+    // But we can also use the "self_unzip_pw" value from localStorage, which can help decrypting multiple pages on the same server
+    const pwFromLocalStorage = localStorage.getItem("self_unzip_pw");
+    // Both of these options do not expose the password to the server
+    for (const pw of [urlHash, pwFromLocalStorage]) {
+        if (pw) {
+            try {
+                return await fndec(pw, data_bytes);
+            } catch (e) {
+                console.log(`Automatic decryption using password "${pw}" from URL or cookie failed`);
+            }
+        }
     }
-    try {
-        return await fndec(pw, data_bytes);
-    } catch (e) {
-        alert(`"Decryption failed" with error: ${e}`);
-        location.hash="";// delete the hash, since it was wrong
-        if (!location.search.includes("noreload")){// use ?noreload in the URL for debugging
-            location.reload();//this simplifies the code (no recursion, no loops, etc)
+
+    while (true) {
+        const pw = prompt("PW_PROMPT");
+        try {
+            return await fndec(pw, data_bytes);
+        } catch (e) {
+            alert(`"Decryption failed" with error: ${e}`);
         }
     }
 }

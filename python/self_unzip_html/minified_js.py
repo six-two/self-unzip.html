@@ -1,3 +1,6 @@
+# Compressed versions of /code_to_minify/*.js
+# The easiest way to comress them is using the online closure compiler: https://jscompressor.treblereel.dev/
+
 B85DECODE="""// https://github.com/nE0sIghT/ascii85.js, MIT License, Copyright (C) 2018  Yuri Konotopov (Юрий Конотопов) <ykonotopov@gnome.org>
 const LINE_WIDTH=80,TUPLE_BITS=[24,16,8,0],POW_85_4=[52200625,614125,7225,85,1];function getByteArrayPart(b,g=4){let e=new Uint8Array(g);for(let c=0;c<g;c++)e[c]=b>>TUPLE_BITS[c]&255;return e}
 function toByteArray(b){function g(){let l=getByteArrayPart(h,d-1);for(let k=0;k<l.length;k++)e.push(l[k]);h=d=0}let e=[];var c=!1;let h=0,d=0,f=b.startsWith("<~")&&2<b.length?2:0;do if(0!==b.charAt(f).trim().length){var a=b.charCodeAt(f);switch(a){case 122:0!=d&&console.error("Unexpected 'z' character at position "+f);for(a=0;4>a;a++)e.push(0);break;case 126:c="";for(a=f+1;a<b.length&&0==c.trim().length;)c=b.charAt(a++);">"!=c&&console.error("Broken EOD at position "+a);d&&(h+=POW_85_4[d-1],g());
@@ -9,8 +12,9 @@ HEXDECODE="""function decode(b){for(var c=new Uint8Array(b.length/2),a=0;a<b.len
 """
 DECRYPT="""// Based loosely on https://github.com/rndme/aes4js/blob/master/aes4js.js, MIT License, dandavis
 const fns2b=a=>(new TextEncoder("utf-8")).encode(a);async function fndrv(a,b){a=fns2b(a);var c=fns2b("six-two/self-unzip.html");c=new Uint8Array([...a,...c,...b]);c=await crypto.subtle.digest("SHA-256",c);b=1E6+a.length+b[0];a=await window.crypto.subtle.importKey("raw",a,"PBKDF2",!1,["deriveBits","deriveKey"]);return await window.crypto.subtle.deriveKey({name:"PBKDF2",salt:c,iterations:b,hash:"SHA-256"},a,{name:"AES-GCM",length:256},!0,["encrypt","decrypt"])}
-async function fndec(a,b){var c=b.slice(0,12);b=b.slice(12);a=await fndrv(a,c);c=await window.crypto.subtle.decrypt({name:"AES-GCM",iv:c,tagLength:128},a,b);return new Uint8Array(c)}
-async function decryptLoop(a){if(!isSecureContext)throw alert("Decryption only possible in secure context. Please load via file://, https://, or from localhost."),Error("Insecure Context");let b;b=location.hash?location.hash.slice(1):prompt("PW_PROMPT");try{return await fndec(b,a)}catch(c){alert(`"Decryption failed" with error: ${c}`),location.hash="",location.search.includes("noreload")||location.reload()}};
+async function fndec(a,b){console.log("Decrypting with password",a);var c=b.slice(0,12);b=b.slice(12);a=await fndrv(a,c);c=await window.crypto.subtle.decrypt({name:"AES-GCM",iv:c,tagLength:128},a,b);return new Uint8Array(c)}
+async function decryptLoop(a){if(!isSecureContext)throw alert("Decryption only possible in secure context. Please load via file://, https://, or from localhost."),Error("Insecure Context");var b=(location.hash||"#").slice(1);const c=localStorage.getItem("self_unzip_pw");for(const d of[b,c])if(d)try{return await fndec(d,a)}catch(e){console.log(`Automatic decryption using password "${d}" from URL or cookie failed`)}for(;;){b=prompt("PW_PROMPT");try{return await fndec(b,a)}catch(d){alert(`"Decryption failed" with error: ${d}`)}}}
+;
 """
 UNZIP="""// https://github.com/101arrowz/fflate, MIT License, Copyright (c) 2020 Arjun Barrett
 (function(){var n=Uint8Array,B=Uint16Array,L=Uint32Array,M=new n([0,0,0,0,0,0,0,0,1,1,1,1,2,2,2,2,3,3,3,3,4,4,4,4,5,5,5,5,0,0,0,0]),N=new n([0,0,0,0,1,1,2,2,3,3,4,4,5,5,6,6,7,7,8,8,9,9,10,10,11,11,12,12,13,13,0,0]),R=new n([16,17,18,0,8,7,9,6,10,5,11,4,12,3,13,2,14,1,15]),h=function(a,b){for(var c=new B(31),g=0;31>g;++g)c[g]=b+=1<<a[g-1];a=new L(c[30]);for(g=1;30>g;++g)for(b=c[g];b<c[g+1];++b)a[b]=b-c[g]<<5|g;return[c,a]},l=h(M,2),O=l[0];l=l[1];O[28]=258;l[258]=28;var S=h(N,0)[0],F=new B(32768);for(h=
