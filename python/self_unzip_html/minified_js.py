@@ -5,6 +5,8 @@ c=!0;break;default:(33>a||117<a)&&console.error("Unexpected character with code 
 """
 B64DECODE="""async function decodeAsync(a){fake_response=await fetch("data:;base64,"+a);blob=await fake_response.blob();buffer=await blob.arrayBuffer();return new Uint8Array(buffer)};
 """
+HEXDECODE="""function decode(b){for(var c=new Uint8Array(b.length/2),a=0;a<b.length;a+=2)c[a/2]=parseInt(b.substr(a,2),16);return c};
+"""
 DECRYPT="""// Based loosely on https://github.com/rndme/aes4js/blob/master/aes4js.js, MIT License, dandavis
 const fns2b=a=>(new TextEncoder("utf-8")).encode(a);async function fndrv(a,b){a=fns2b(a);var c=fns2b("six-two/self-unzip.html");c=new Uint8Array([...a,...c,...b]);c=await crypto.subtle.digest("SHA-256",c);b=1E6+a.length+b[0];a=await window.crypto.subtle.importKey("raw",a,"PBKDF2",!1,["deriveBits","deriveKey"]);return await window.crypto.subtle.deriveKey({name:"PBKDF2",salt:c,iterations:b,hash:"SHA-256"},a,{name:"AES-GCM",length:256},!0,["encrypt","decrypt"])}
 async function fndec(a,b){var c=b.slice(0,12);b=b.slice(12);a=await fndrv(a,c);c=await window.crypto.subtle.decrypt({name:"AES-GCM",iv:c,tagLength:128},a,b);return new Uint8Array(c)}

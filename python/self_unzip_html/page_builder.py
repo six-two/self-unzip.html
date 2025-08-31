@@ -2,12 +2,10 @@ import base64
 from enum import Enum
 import gzip
 import os
-import sys
-from typing import Optional, NamedTuple
 # local
-from .minified_js import B64DECODE, B85DECODE, UNZIP
+from .minified_js import B64DECODE, B85DECODE, HEXDECODE, UNZIP
 from .static_js import HEXDUMP, DECODE_AND_EVAL_ACTION
-from .crypto import BaseEncryptor, NullEncryptor, ALGORITHM_NULL
+from .crypto import BaseEncryptor, ALGORITHM_NULL
 from .util import print_info
 
 SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
@@ -20,7 +18,7 @@ class Compression(Enum):
     GZIP = "gzip"
 
 class Encoding(Enum):
-    # @TODO: hex?
+    HEX = "hex"
     BASE64 = "base64"
     ASCII85 = "ascii85"
 
@@ -94,6 +92,10 @@ class PageBuilder:
             library_code += B64DECODE
             decode_fn = "await decodeAsync"
             encoded_data = base64.b64encode(encoded_data)
+        elif encoding == Encoding.HEX:
+            library_code += HEXDECODE
+            decode_fn = "decode"
+            encoded_data = encoded_data.hex().encode()
         else:
             raise Exception(f"Unknown encoding method '{encoding}'")
 

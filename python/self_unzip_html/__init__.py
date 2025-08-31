@@ -64,7 +64,7 @@ def main_wrapped() -> None:
 
     ap_settings = ap.add_argument_group("settings")
     ap_settings.add_argument("-c", "--compression", default="auto", choices=["auto", "none", "gzip"], help="how to compress the contents (default: auto)")
-    ap_settings.add_argument("-e", "--encoding", default="auto", choices=["auto", "base64", "ascii85"], help="how to encode the binary data  (default: auto). base64 may not work for large contents (>65kB) due to different browser limitations")
+    ap_settings.add_argument("-e", "--encoding", default="auto", choices=["auto", "base64", "ascii85", "hex"], help="how to encode the binary data  (default: auto). base64 may not work for large contents (>65kB) due to different browser limitations")
     ap_settings.add_argument("-p", "--password", help="encrypt the compressed data using this password")
     ap_settings.add_argument("-P", "--password-prompt", default="Please enter the decryption password", help="provide your custom password prompt, that can for example be used to provide a password hint")
     ap_settings.add_argument("--console-log", action="store_true", help="insert debug statements to see the output of the individual steps")
@@ -144,6 +144,7 @@ def main_wrapped() -> None:
         encryptor = NullEncryptor()
 
     compression_list = [Compression.GZIP, Compression.NONE] if args.compression == "auto" else [Compression(args.compression)]
+    # Hex is never much shorter than base64 (both have short stagers), so for performance reasons we just always ignore it in favor of base64
     encoding_list = [Encoding.BASE64, Encoding.ASCII85] if args.encoding == "auto" else [Encoding(args.encoding)]
     page_builder = PageBuilder(template,
                                java_script,

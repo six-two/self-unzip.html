@@ -187,12 +187,13 @@ The rest of the project is under the MIT license, so you can do whatever as long
 
 ### Head
 
+- Added `--encoding hex` option
 - Refactoring of the python code to make it usable as a library
 - Added `--svg` option and ported the `--download` option to work in SVGs
 
 ### Version 0.2.1
 
-- Added `Dockerfile` and published image `docker pull ghcr.io/six-two/self-unzip-html`
+- Added `Dockerfile` and published image. Download with `docker pull ghcr.io/six-two/self-unzip-html`
 - Added `--show-text` action, which shows the payload as plain text
 
 ### Version 0.2.0
