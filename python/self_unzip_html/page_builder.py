@@ -1,8 +1,9 @@
 import base64
+from enum import Enum
 import gzip
 import os
 import sys
-from typing import Optional
+from typing import Optional, NamedTuple
 # local
 from .minified_js import B64DECODE, B85DECODE, UNZIP
 from .static_js import HEXDUMP, DECODE_AND_EVAL_ACTION
@@ -14,44 +15,50 @@ DEFAULT_SVG_FILE = os.path.join(SCRIPT_DIR, "default.svg")
 DEFAULT_TEMPLATE_FILE = os.path.join(SCRIPT_DIR, "template.html")
 
 
+class Compression(Enum):
+    NONE = "none"
+    GZIP = "gzip"
+
+class Encoding(Enum):
+    # @TODO: hex?
+    BASE64 = "base64"
+    ASCII85 = "ascii85"
+
+
 class PageBuilder:
-    def __init__(self, input_data: bytes, template: str, js_payload: str, encryption_password: Optional[str], password_hint: str, obscure_action: bool) -> None:
+    def __init__(self, template: str, js_payload: str, encryptor: BaseEncryptor,
+                 obscure_action: bool = False,
+                 insert_debug_statements: bool = False,
+                 encode_library_as_base64: bool = False,
+                 compression_list: list[Compression] = [Compression.NONE, Compression.GZIP],
+                 encoding_list: list[Encoding] = [Encoding.BASE64, Encoding.ASCII85]
+                 ) -> None:
         self.template = template
-        self.obscure_action = obscure_action
-        self.input_data = input_data
-
         self.js_payload = js_payload
-        # Nonce reuse should be save, since only one of the results should be used (we may need to encrypt multiple time if some parameters have the `auto` value)
-        if encryption_password:
-            try:
-                # Conditional import, since it is not always needed and loads an external library
-                from .crypto_aes import AesEncryptor
-                self.encryptor = AesEncryptor(encryption_password.encode(), password_hint)
-            except Exception as ex:
-                print("[-]", ex)
-                print("[*] Hint: Please make sure, that 'pycryptodomex' is installed. You can install it by running:")
-                print("python3 -m pip install pycryptodomex")
-                raise ex
-        else:
-            self.encryptor = NullEncryptor()
+        self.encryptor = encryptor
+        self.obscure_action = obscure_action
+        self.encode_library_as_base64 = encode_library_as_base64
+        self.insert_debug_statements = insert_debug_statements
+        self.encoding_config_list = []
 
-    def build_page(self, compression: str, encoding: str, insert_debug_statements: bool) -> str:
-        compression_list = ["none", "gzip"] if compression == "auto" else [compression]
-        encoding_list = ["base64", "ascii85"] if encoding == "auto" else [encoding]
+        for compression in compression_list:
+            for encoding in encoding_list:
+                self.encoding_config_list.append((compression, encoding))
+
+    def build_page(self, input_data: bytes) -> str:
         variants = []
 
-        for c in compression_list:
-            for e in encoding_list:
-                page = self.build_page_no_auto(c, e, insert_debug_statements)
-                print_info(f"Testing combination: {c} & {e} => {len(page)} bytes")
-                variants.append(page)
+        for compression, encoding in self.encoding_config_list:
+            page = self._build_page_no_auto(input_data, compression, encoding)
+            print_info(f"Testing combination: {compression} & {encoding} => {len(page)} bytes")
+            variants.append(page)
 
         # Return the shortest result
         return sorted(variants, key=lambda x: len(x))[0]
 
-    def build_page_no_auto(self, compression: str, encoding: str, insert_debug_statements: bool) -> str:
+    def _build_page_no_auto(self, input_data: bytes, compression: Compression, encoding: Encoding) -> str:
         library_code = self.encryptor.get_js_library_code()
-        encoded_data = self.input_data
+        encoded_data = input_data
         js_payload_action = self.js_payload
 
         if self.encryptor.get_algorithm() != ALGORITHM_NULL:
@@ -69,47 +76,47 @@ class PageBuilder:
             obscured_action = ('-'.join([b[::-1] for b in [encoded_action[i: i+5] for i in range(0, len(encoded_action), 5)]]))
             js_payload_action = DECODE_AND_EVAL_ACTION.replace("{{OBSCURED_ACTION}}", obscured_action)
 
-        if compression == "gzip":
+        if compression == Compression.GZIP:
             library_code += UNZIP
             encoded_data = gzip.compress(encoded_data)
-        elif compression == "none":
+        elif compression == Compression.NONE:
             pass
         else:
-            raise Exception(f"Unknown compression method '{compression}'")
+            raise Exception(f"Unknown compression method '{compression}', only {Compression.GZIP} and {Compression.NONE} are supported")
 
         encoded_data = self.encryptor.encrypt_with_reused_iv(encoded_data)
 
-        if encoding == "ascii85":
+        if encoding == Encoding.ASCII85:
             library_code += B85DECODE
             decode_fn = "decode"
             encoded_data = base64.a85encode(encoded_data, adobe=True).replace(b'"', b"v").replace(b"\\", b"w")
-        elif encoding == "base64":
+        elif encoding == Encoding.BASE64:
             library_code += B64DECODE
             decode_fn = "await decodeAsync"
             encoded_data = base64.b64encode(encoded_data)
         else:
-            raise Exception(f"Unknown encoding method '{compression}'")
+            raise Exception(f"Unknown encoding method '{encoding}'")
 
-        if insert_debug_statements:
+        if self.insert_debug_statements:
             library_code += HEXDUMP
         
-        glue_code = self.generate_glue_code(insert_debug_statements, decode_fn, compression)
+        glue_code = self.generate_glue_code(decode_fn, compression)
 
-        #@TODO only in SVG
-        library_code_as_base64 = base64.b64encode(library_code.encode()).decode()
-        library_code = f"eval(atob('{library_code_as_base64}'))"
+        if self.encode_library_as_base64:
+            library_code_as_base64 = base64.b64encode(library_code.encode()).decode()
+            library_code = f"eval(atob('{library_code_as_base64}'))"
 
         return self.replace_in_template(library_code, glue_code, js_payload_action, encoded_data)
 
-    def generate_glue_code(self, insert_debug_statements: bool, decode_fn: str, compression: str) -> str:
+    def generate_glue_code(self, decode_fn: str, compression: Compression) -> str:
         """
         Generates glue code that will take input `data` and then decrypts it (optional), unzips it (optional), decodes it (required) and finally passes it to the `action` function.
         """
-        if insert_debug_statements:
+        if self.insert_debug_statements:
             glue_decrypt = ""
             if self.encryptor.get_algorithm() != ALGORITHM_NULL:
                 glue_decrypt += "data=await decryptLoop(data);log_hexdump('Decrypted',data);"
-            if compression == "gzip":
+            if compression == Compression.GZIP:
                 glue_decrypt += "data=unzip(data);log_hexdump('Unzipped',data);"
 
             return f"""async function main(data) {{
@@ -124,7 +131,7 @@ class PageBuilder:
             glue_code = f"{decode_fn}({glue_code})"
             if self.encryptor.get_algorithm() != ALGORITHM_NULL:
                 glue_code = f"await decryptLoop({glue_code})"
-            if compression == "gzip":
+            if compression == Compression.GZIP:
                 glue_code = f"unzip({glue_code})"
 
             glue_code = f"action({glue_code})"

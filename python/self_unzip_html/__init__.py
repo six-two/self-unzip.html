@@ -6,8 +6,9 @@ from typing import Any
 # local
 from .static_js import JS_DOWNLOAD, JS_DOWNLOAD_SVG, JS_DRIVEBY_REDIRECT, JS_DRIVEBY_REDIRECT_SVG, JS_EVAL, JS_REPLACE, JS_SHOW_TEXT, JS_SHOW_TEXT_SVG
 from .util import print_info, PRINT_INFO_MESSAGES
-from .page_builder import PageBuilder
+from .page_builder import PageBuilder, Compression, Encoding
 from .template import get_svg_template, get_html_template
+from .crypto import NullEncryptor
 
 SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
 DEFAULT_SVG_FILE = os.path.join(SCRIPT_DIR, "default.svg")
@@ -129,8 +130,29 @@ def main_wrapped() -> None:
         exit(1)
 
 
-    page_builder = PageBuilder(input_data, template, java_script, args.password, args.password_prompt, args.obscure_action)
-    html_page = page_builder.build_page(args.compression, args.encoding, args.console_log)
+    if args.password:
+        try:
+            # Conditional import, since it is not always needed and loads an external library
+            from .crypto_aes import AesEncryptor
+            encryptor = AesEncryptor(args.password.encode(), args.password_prompt)
+        except Exception as ex:
+            print("[-]", ex)
+            print("[*] Hint: Please make sure, that 'pycryptodomex' is installed. You can install it by running:")
+            print("python3 -m pip install pycryptodomex")
+            exit(1)
+    else:
+        encryptor = NullEncryptor()
+
+    compression_list = [Compression.GZIP, Compression.NONE] if args.compression == "auto" else [Compression(args.compression)]
+    encoding_list = [Encoding.BASE64, Encoding.ASCII85] if args.encoding == "auto" else [Encoding(args.encoding)]
+    page_builder = PageBuilder(template,
+                               java_script,
+                               encryptor,
+                               obscure_action=args.obscure_action,
+                               encode_library_as_base64=is_svg, insert_debug_statements=args.console_log, compression_list=compression_list,
+                               encoding_list=encoding_list
+                               )
+    html_page = page_builder.build_page(input_data)
 
     if args.output:
         with open(args.output, "w") as f:
