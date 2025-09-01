@@ -45,6 +45,8 @@ class PageBuilder:
 
     def build_page(self, input_data: bytes) -> str:
         variants = []
+        # Use a different IV for each page
+        self.encryptor.rotate_iv()
 
         for compression, encoding in self.encoding_config_list:
             page = self._build_page_no_auto(input_data, compression, encoding)
