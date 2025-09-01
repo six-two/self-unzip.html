@@ -67,6 +67,7 @@ def main_wrapped() -> None:
     ap_settings.add_argument("-e", "--encoding", default="auto", choices=["auto", "base64", "ascii85", "hex"], help="how to encode the binary data  (default: auto). base64 may not work for large contents (>65kB) due to different browser limitations")
     ap_settings.add_argument("-p", "--password", help="encrypt the compressed data using this password")
     ap_settings.add_argument("-P", "--password-prompt", default="Please enter the decryption password", help="provide your custom password prompt, that can for example be used to provide a password hint")
+    ap_settings.add_argument("-C", "--cache-password", action="store_true", help="cache password to localStorage, so that you can reload the page without entering password again")
     ap_settings.add_argument("--console-log", action="store_true", help="insert debug statements to see the output of the individual steps")
     
     ap_template = ap.add_argument_group("template settings")
@@ -134,7 +135,7 @@ def main_wrapped() -> None:
         try:
             # Conditional import, since it is not always needed and loads an external library
             from .crypto_aes import AesEncryptor
-            encryptor = AesEncryptor(args.password.encode(), args.password_prompt)
+            encryptor = AesEncryptor(args.password.encode(), args.password_prompt, args.cache_password)
         except Exception as ex:
             print("[-]", ex)
             print("[*] Hint: Please make sure, that 'pycryptodomex' is installed. You can install it by running:")

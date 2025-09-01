@@ -9,7 +9,7 @@ from secrets import token_bytes
 from Cryptodome.Cipher import AES
 # local
 from .crypto import BaseEncryptor, ALGORITHM_AES_GCM
-from .minified_js import DECRYPT
+from .minified_js import DECRYPT, DECRYPT_CACHE_PW
 
 
 BITS_256 = 256//8
@@ -30,13 +30,14 @@ class AesEncryptor(BaseEncryptor):
     This is the python implementation of my modified aes4js.js.
     Anything encrypted with this code can be decrypted by the JavaScript version
     """
-    def __init__(self, password: bytes, password_hint: str) -> None:
+    def __init__(self, password: bytes, password_hint: str, cache_password: bool) -> None:
         self.password = password
         self.iv_used = True # needed before rotate_iv call
         self.rotate_iv()
 
         escaped_hint_wrapped_in_quotes = json.dumps(password_hint)
-        self.js_library_code = DECRYPT.replace('"PW_PROMPT"', escaped_hint_wrapped_in_quotes)
+        self.js_library_code = DECRYPT_CACHE_PW if cache_password else DECRYPT
+        self.js_library_code = self.js_library_code.replace('"PW_PROMPT"', escaped_hint_wrapped_in_quotes)
 
     def get_algorithm(self) -> str:
         return ALGORITHM_AES_GCM
