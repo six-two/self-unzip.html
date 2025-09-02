@@ -65,10 +65,14 @@ def main_wrapped() -> None:
     ap_settings = ap.add_argument_group("settings")
     ap_settings.add_argument("-c", "--compression", default="auto", choices=["auto", "none", "gzip"], help="how to compress the contents (default: auto)")
     ap_settings.add_argument("-e", "--encoding", default="auto", choices=["auto", "base64", "ascii85", "hex"], help="how to encode the binary data  (default: auto). base64 may not work for large contents (>65kB) due to different browser limitations")
-    ap_settings.add_argument("-p", "--password", help="encrypt the compressed data using this password")
-    ap_settings.add_argument("-P", "--password-prompt", default="Please enter the decryption password", help="provide your custom password prompt, that can for example be used to provide a password hint")
-    ap_settings.add_argument("-C", "--cache-password", action="store_true", help="cache password to localStorage, so that you can reload the page without entering password again")
     ap_settings.add_argument("--console-log", action="store_true", help="insert debug statements to see the output of the individual steps")
+
+    ap_encryption = ap.add_argument_group("encryption")
+    ap_encryption.add_argument("-p", "--password", help="encrypt the compressed data using this password")
+    ap_encryption.add_argument("-P", "--password-prompt", default="Please enter the decryption password", help="provide your custom password prompt, that can for example be used to provide a password hint")
+    ap_encryption.add_argument("-C", "--cache-password", action="store_true", help="cache password to localStorage, so that you can reload the page without entering password again")
+    ap_encryption.add_argument("--iterations", "-I", type=int, default=1_000_000, help="minimum number of iterations for the PBKDF key derivation function")
+    "pkdf_iteration_count"
     
     ap_template = ap.add_argument_group("template settings")
     ap_template_mutex = ap_template.add_mutually_exclusive_group()
@@ -135,7 +139,7 @@ def main_wrapped() -> None:
         try:
             # Conditional import, since it is not always needed and loads an external library
             from .crypto_aes import AesEncryptor
-            encryptor = AesEncryptor(args.password.encode(), args.password_prompt, args.cache_password)
+            encryptor = AesEncryptor(args.password.encode(), args.password_prompt, args.cache_password, pbkdf_iteration_count=args.iterations)
         except Exception as ex:
             print("[-]", ex)
             print("[*] Hint: Please make sure, that 'pycryptodomex' is installed. You can install it by running:")

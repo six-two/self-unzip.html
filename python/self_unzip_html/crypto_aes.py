@@ -14,11 +14,11 @@ from .minified_js import DECRYPT, DECRYPT_CACHE_PW
 
 BITS_256 = 256//8
 
-def deriveKey(password: bytes, iv: bytes):
+def deriveKey(password: bytes, iv: bytes, pbkdf_iteration_count: int):
     application_name = b"six-two/self-unzip.html"
     salt_pre_hash_bytes = password + application_name + iv
     salt = sha256(salt_pre_hash_bytes).digest()
-    iteration_count = 1_000_000 + len(password) + iv[0]
+    iteration_count = pbkdf_iteration_count + len(password) + iv[0]
     # print("[Debug] Salt:", salt.hex())
     # print(iteration_count)
 
@@ -30,14 +30,15 @@ class AesEncryptor(BaseEncryptor):
     This is the python implementation of my modified aes4js.js.
     Anything encrypted with this code can be decrypted by the JavaScript version
     """
-    def __init__(self, password: bytes, password_hint: str, cache_password: bool) -> None:
+    def __init__(self, password: bytes, password_hint: str, cache_password: bool, pbkdf_iteration_count: int = 1_000_000) -> None:
         self.password = password
+        self.pbkdf_iteration_count = pbkdf_iteration_count
         self.iv_used = True # needed before rotate_iv call
         self.rotate_iv()
 
         escaped_hint_wrapped_in_quotes = json.dumps(password_hint)
         self.js_library_code = DECRYPT_CACHE_PW if cache_password else DECRYPT
-        self.js_library_code = self.js_library_code.replace('"PW_PROMPT"', escaped_hint_wrapped_in_quotes)
+        self.js_library_code = self.js_library_code.replace('"PW_PROMPT"', escaped_hint_wrapped_in_quotes).replace("=1E6+", f"={self.pbkdf_iteration_count}+")
 
     def get_algorithm(self) -> str:
         return ALGORITHM_AES_GCM
@@ -54,7 +55,7 @@ class AesEncryptor(BaseEncryptor):
         # This way we can call 'rotate_iv' to flag a key for rotation without actually causing unnecessary calculations
         if self.iv_used:
             self.iv = token_bytes(12)
-            self.key = deriveKey(self.password, self.iv)
+            self.key = deriveKey(self.password, self.iv, self.pbkdf_iteration_count)
             self.iv_used = False
 
     def get_js_library_code(self) -> str:
