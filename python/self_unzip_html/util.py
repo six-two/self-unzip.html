@@ -7,3 +7,8 @@ def print_info(message):
     # This makes them visible to the user but not to the next program in the pipe
     if PRINT_INFO_MESSAGES:
         print(f"[*] {message}", file=sys.stderr)
+
+
+class OperationNotImplemented(Exception):
+    pass
+

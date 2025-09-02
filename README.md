@@ -187,7 +187,10 @@ The rest of the project is under the MIT license, so you can do whatever as long
 
 ### Head
 
+- @TODO: Make interactive mode that will guide user through file creation
+
 - Refactoring of the python code to make it usable as a library
+- Added `encrypt` subcommand to hide encryption only flags from default help page
 - Added `--iterations` option the PBKDF2, enabling a custom speed / security tradeoff
 - Added `--cache-password` option
 - Added option to supply decryption password via `localStorage`: `localStorage.setItem("self_unzip_pw", "YOUR_PASSWORD_HERE")`

@@ -2,13 +2,14 @@
 import argparse
 import os
 import sys
-from typing import Any
 # local
 from .static_js import JS_DOWNLOAD, JS_DOWNLOAD_SVG, JS_DRIVEBY_REDIRECT, JS_DRIVEBY_REDIRECT_SVG, JS_EVAL, JS_REPLACE, JS_SHOW_TEXT, JS_SHOW_TEXT_SVG
 from .util import print_info, PRINT_INFO_MESSAGES
 from .page_builder import PageBuilder, Compression, Encoding
 from .template import get_svg_template, get_html_template
 from .crypto import NullEncryptor
+from .cli.action import register_action_argument_parser, get_javascript
+from .cli.encryption import register_encryption_argument_parser, get_encryptor
 
 SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
 DEFAULT_SVG_FILE = os.path.join(SCRIPT_DIR, "default.svg")
@@ -16,28 +17,6 @@ DEFAULT_TEMPLATE_FILE = os.path.join(SCRIPT_DIR, "template.html")
 
 class OperationNotImplemented(Exception):
     pass
-
-def get_javascript(args: Any, file_name: str, is_svg: bool) -> str:
-    if args.download != None:
-        # If args.downlaod is empty, use the name of the input file, otherwise use the user provided value
-        base_code = JS_DOWNLOAD_SVG if is_svg else JS_DOWNLOAD
-        return base_code.replace("{{NAME}}", args.download or file_name)
-    elif args.eval:
-        return JS_EVAL
-    elif args.replace:
-        if is_svg:
-            raise OperationNotImplemented("Setting the innerHTML of a svg.text always resulted in errors. Use --show-text or remove the --svg flag")
-        else:
-            return JS_REPLACE
-    elif args.show_text:
-        return JS_SHOW_TEXT_SVG if is_svg else JS_SHOW_TEXT
-    elif args.driveby_redirect != None:
-        base_code = JS_DRIVEBY_REDIRECT_SVG if is_svg else JS_DRIVEBY_REDIRECT
-        return base_code.replace("{{REDIRECT_URL}}", args.driveby_redirect).replace("{{NAME}}", file_name)
-    elif args.custom != None:
-        return args.custom
-    else:
-        raise Exception("Bug: Should not happen, since one of the payload parameters is required")
 
 
 def main_wrapped() -> None:
@@ -53,27 +32,14 @@ def main_wrapped() -> None:
     ap_output.add_argument("-O", "--open", action="store_true", help="if writing output to a file, try to immediately open the file in the default web browser afterwards")
     ap_output.add_argument("-q", "--quiet", action="store_true", help="minimize console output")
 
-    payload_option_visual_group = ap.add_argument_group("action to perform with the payload")
-    payload_option_mutex = payload_option_visual_group.add_mutually_exclusive_group(required=True)
-    payload_option_mutex.add_argument("--download", nargs="?", metavar="FILE_NAME", const="", help="show a download link to download the payload as a file. If you specify an argument that is used as the name of the file to download")
-    payload_option_mutex.add_argument("--eval", action="store_true", help="pass the payload to eval() to run it as JavaScript code")
-    payload_option_mutex.add_argument("--replace", action="store_true", help="replace the page's content with the payload. Use this to compress HTML pages")
-    payload_option_mutex.add_argument("--show-text", action="store_true", help="use this to show plain text. Unlike --replace this does not interpret HTML tags and does not change whitespace")
-    payload_option_mutex.add_argument("--driveby-redirect", metavar="REDIRECT_URL", help="downlaod the payload as a file in the background and immediately redirect the user to another site. Useful for phishing")
-    payload_option_mutex.add_argument("--custom", metavar="YOUR_JAVASCRIPT_CODE", help="run your own action. Provide a JavaScript snippet that uses the decoded payload, which is stored in the 'og_data' variable. Note that data is a byte array, so you likely want to use 'new TextDecoder().decode(og_data)' to convert it to Unicode")
+    register_action_argument_parser(ap)
+    register_encryption_argument_parser(ap)
 
     ap_settings = ap.add_argument_group("settings")
     ap_settings.add_argument("-c", "--compression", default="auto", choices=["auto", "none", "gzip"], help="how to compress the contents (default: auto)")
     ap_settings.add_argument("-e", "--encoding", default="auto", choices=["auto", "base64", "ascii85", "hex"], help="how to encode the binary data  (default: auto). base64 may not work for large contents (>65kB) due to different browser limitations")
     ap_settings.add_argument("--console-log", action="store_true", help="insert debug statements to see the output of the individual steps")
 
-    ap_encryption = ap.add_argument_group("encryption")
-    ap_encryption.add_argument("-p", "--password", help="encrypt the compressed data using this password")
-    ap_encryption.add_argument("-P", "--password-prompt", default="Please enter the decryption password", help="provide your custom password prompt, that can for example be used to provide a password hint")
-    ap_encryption.add_argument("-C", "--cache-password", action="store_true", help="cache password to localStorage, so that you can reload the page without entering password again")
-    ap_encryption.add_argument("--iterations", "-I", type=int, default=1_000_000, help="minimum number of iterations for the PBKDF key derivation function")
-    "pkdf_iteration_count"
-    
     ap_template = ap.add_argument_group("template settings")
     ap_template_mutex = ap_template.add_mutually_exclusive_group()
     ap_template_mutex.add_argument("--svg", metavar="SVG_FILE_PATH", nargs="?", const=DEFAULT_SVG_FILE, help="use this SVG instead of a normal HTML page for the smuggling")
@@ -110,7 +76,6 @@ def main_wrapped() -> None:
     template_file = args.template or DEFAULT_TEMPLATE_FILE
     file_name = os.path.basename(args.file)
     is_svg = args.svg != None
-    java_script = get_javascript(args, file_name, is_svg)
 
     if is_svg:
         try:
@@ -135,25 +100,12 @@ def main_wrapped() -> None:
         exit(1)
 
 
-    if args.password:
-        try:
-            # Conditional import, since it is not always needed and loads an external library
-            from .crypto_aes import AesEncryptor
-            encryptor = AesEncryptor(args.password.encode(), args.password_prompt, args.cache_password, pbkdf_iteration_count=args.iterations)
-        except Exception as ex:
-            print("[-]", ex)
-            print("[*] Hint: Please make sure, that 'pycryptodomex' is installed. You can install it by running:")
-            print("python3 -m pip install pycryptodomex")
-            exit(1)
-    else:
-        encryptor = NullEncryptor()
-
     compression_list = [Compression.GZIP, Compression.NONE] if args.compression == "auto" else [Compression(args.compression)]
     # Hex is never much shorter than base64 (both have short stagers), so for performance reasons we just always ignore it in favor of base64
     encoding_list = [Encoding.BASE64, Encoding.ASCII85] if args.encoding == "auto" else [Encoding(args.encoding)]
     page_builder = PageBuilder(template,
-                               java_script,
-                               encryptor,
+                               get_javascript(args, file_name, is_svg),
+                               get_encryptor(args),
                                obscure_action=args.obscure_action,
                                encode_library_as_base64=is_svg, insert_debug_statements=args.console_log, compression_list=compression_list,
                                encoding_list=encoding_list
