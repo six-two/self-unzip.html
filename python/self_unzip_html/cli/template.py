@@ -1,32 +1,33 @@
 from argparse import ArgumentParser
 # local
+from . import Subcommand
 from ..template import get_svg_template, get_html_template, DEFAULT_HTML_TEMPLATE_PATH, DEFAULT_SVG_TEMPLATE_PATH
 
 
-def register_template_argument_parser(ap: ArgumentParser):
-    ap_template = ap.add_argument_group("template settings")
-    ap_template_mutex = ap_template.add_mutually_exclusive_group()
-    ap_template_mutex.add_argument("--svg", metavar="SVG_FILE_PATH", nargs="?", const=DEFAULT_SVG_TEMPLATE_PATH, help="use this SVG instead of a normal HTML page for the smuggling")
-    ap_template_mutex.add_argument("--template", help="use this template file instead of the default one")
-    ap_template.add_argument("--title", default="Self Extracting Page", help="set the title of the HTML page")
-    initial_page_contents_mutex = ap_template.add_mutually_exclusive_group()
-    initial_page_contents_mutex.add_argument("--html", metavar="HTML_STRING", help="the HTML to show when the page is first loaded or if the unpacking fails")
-    initial_page_contents_mutex.add_argument("--html-file", metavar="FILE", help="like --html, but read the contents from the given file")
+def register_template_argument_parser(ap: ArgumentParser, subcommand: Subcommand):
+    ap_template = ap.add_argument_group("Template Settings")
+    if subcommand in [Subcommand.SVG, Subcommand.SVG_ENCRYPTED]:
+        ap_template.add_argument("--svg", metavar="SVG_FILE_PATH", nargs="?", default=DEFAULT_SVG_TEMPLATE_PATH, help="use this SVG instead of a normal HTML page for the smuggling")
+    else:
+        ap_template.add_argument("--template", help="use this template file instead of the default one")
+        ap_template.add_argument("--title", default="Self Extracting Page", help="set the title of the HTML page")
+        initial_page_contents_mutex = ap_template.add_mutually_exclusive_group()
+        initial_page_contents_mutex.add_argument("--html", metavar="HTML_STRING", help="the HTML to show when the page is first loaded or if the unpacking fails")
+        initial_page_contents_mutex.add_argument("--html-file", metavar="FILE", help="like --html, but read the contents from the given file")
 
 
 def is_svg(args) -> bool:
-    return args.svg != None
+    return args.encoder in [Subcommand.SVG.value, Subcommand.SVG_ENCRYPTED.value]
 
 
 def get_page_template(args) -> str:
-    template_file = args.template or DEFAULT_HTML_TEMPLATE_PATH
-
     if is_svg(args):
         try:
             return get_svg_template(args.svg)
         except:
             raise Exception(f"Failed to load SVG file '{args.svg}'. Try specifying a different file with the --svg option")
     else:
+        template_file = args.template or DEFAULT_HTML_TEMPLATE_PATH
         initial_page_contents = get_initial_page_contents(args)
         try:
             return get_html_template(template_file, args.title, initial_page_contents)

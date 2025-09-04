@@ -1,15 +1,19 @@
 from argparse import ArgumentParser
 from typing import Any
 # local
+from . import Subcommand
 from ..static_js import JS_DOWNLOAD, JS_DOWNLOAD_SVG, JS_DRIVEBY_REDIRECT, JS_DRIVEBY_REDIRECT_SVG, JS_EVAL, JS_REPLACE, JS_SHOW_TEXT, JS_SHOW_TEXT_SVG
 from ..util import OperationNotImplemented
 
-def register_action_argument_parser(ap: ArgumentParser):
-    payload_option_visual_group = ap.add_argument_group("action to perform with the payload")
+def register_action_argument_parser(ap: ArgumentParser, subcommand: Subcommand):
+    payload_option_visual_group = ap.add_argument_group("Payload Action")
     payload_option_mutex = payload_option_visual_group.add_mutually_exclusive_group(required=True)
     payload_option_mutex.add_argument("--download", nargs="?", metavar="FILE_NAME", const="", help="show a download link to download the payload as a file. If you specify an argument that is used as the name of the file to download")
     payload_option_mutex.add_argument("--eval", action="store_true", help="pass the payload to eval() to run it as JavaScript code")
-    payload_option_mutex.add_argument("--replace", action="store_true", help="replace the page's content with the payload. Use this to compress HTML pages")
+    if subcommand not in [Subcommand.SVG, Subcommand.SVG_ENCRYPTED]:
+        # Setting the innerHTML of a svg.text always resulted in errors. So we do not show this option with SVGs
+        payload_option_mutex.add_argument("--replace", action="store_true", help="replace the page's content with the payload. Use this to compress HTML pages")
+    
     payload_option_mutex.add_argument("--show-text", action="store_true", help="use this to show plain text. Unlike --replace this does not interpret HTML tags and does not change whitespace")
     payload_option_mutex.add_argument("--driveby-redirect", metavar="REDIRECT_URL", help="downlaod the payload as a file in the background and immediately redirect the user to another site. Useful for phishing")
     payload_option_mutex.add_argument("--custom", metavar="YOUR_JAVASCRIPT_CODE", help="run your own action. Provide a JavaScript snippet that uses the decoded payload, which is stored in the 'og_data' variable. Note that data is a byte array, so you likely want to use 'new TextDecoder().decode(og_data)' to convert it to Unicode")
@@ -23,7 +27,7 @@ def get_javascript(args: Any, file_name: str, is_svg: bool) -> str:
         return base_code.replace("{{NAME}}", args.download or file_name)
     elif args.eval:
         return JS_EVAL
-    elif args.replace:
+    elif hasattr(args, "replace"): # need to check with hasattr, since it is not defined in the 'svg*' subcommands
         if is_svg:
             raise OperationNotImplemented("Setting the innerHTML of a svg.text always resulted in errors. Use --show-text or remove the --svg flag")
         else:

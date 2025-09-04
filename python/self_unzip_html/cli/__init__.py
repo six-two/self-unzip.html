@@ -1,4 +1,12 @@
 import argparse
+from enum import Enum
+
+class Subcommand(Enum):
+    SVG = "svg"
+    HTML = "html"
+    SVG_ENCRYPTED = "encrypted-svg"
+    HTML_ENCRYPTED = "encrypted-html"
+
 # local
 from ..util import PRINT_INFO_MESSAGES, OperationNotImplemented
 from ..page_builder import PageBuilder
@@ -11,16 +19,21 @@ from .output import register_output_argument_parser, read_input_file, write_outp
 def main_wrapped() -> None:
     # @TODO: Support multiple input files for certain options (download, driveby, etc)?
     ap = argparse.ArgumentParser(description="This tool can create self-decompressing (and unencrypting) HTML pages, that can be used to minify documents or circumvent web proxy download restrictions and filtering.")
-    # ap_input = ap.add_argument_group("input options")
-    # ap_input_mutex = ap_input.add_mutually_exclusive_group(required=True)
-    ap.add_argument("file", metavar="INPUT_FILE", help="the file to encode. Use '-' to read from standard input")
-    # ap_input_mutex.add_argument("-F", "--file-list", help="a list of files to") # @TODO: If i add this, how will output options work?
-    ap.add_argument("-q", "--quiet", action="store_true", help="minimize console output")
 
-    register_action_argument_parser(ap)
-    register_output_argument_parser(ap)
-    register_encryption_argument_parser(ap)
-    register_template_argument_parser(ap)
+    subparsers = ap.add_subparsers(dest="encoder", required=True)
+    for subcommand, description in [
+        (Subcommand.HTML, "Create an unencrypted HTML smuggling page"),
+        (Subcommand.HTML_ENCRYPTED, "Create an encrypted HTML smuggling page"),
+        (Subcommand.SVG, "Create an unencrypted SVG with HTML smuggling code"),
+        (Subcommand.SVG_ENCRYPTED, "Create an encrypted SVG with HTML smuggling code"),
+    ]:
+        ap_subcommand = subparsers.add_parser(subcommand.value, description=description, help=description)
+        ap_subcommand.add_argument("-q", "--quiet", action="store_true", help="minimize console output")
+        
+        register_output_argument_parser(ap_subcommand, subcommand)
+        register_action_argument_parser(ap_subcommand, subcommand)
+        register_encryption_argument_parser(ap_subcommand, subcommand)
+        register_template_argument_parser(ap_subcommand, subcommand)
 
     args = ap.parse_args()
 

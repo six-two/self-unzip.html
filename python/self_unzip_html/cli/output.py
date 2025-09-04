@@ -2,11 +2,14 @@ from argparse import ArgumentParser
 import os
 import sys
 # local
-from ..page_builder import PageBuilder, Compression, Encoding
+from . import Subcommand
+from ..page_builder import Compression, Encoding
 from ..util import print_info
 
-def register_output_argument_parser(ap: ArgumentParser):
-    ap_output = ap.add_argument_group("output options")
+def register_output_argument_parser(ap: ArgumentParser, _subcommand: Subcommand):
+    ap.add_argument("-i", "--input", metavar="INPUT_FILE", required=True, help="the file to encode. Use '-' to read from standard input")
+
+    ap_output = ap.add_argument_group("Output Options")
     ap_output.add_argument("-o", "--output", help="the location to write the output to. If not specified stdout will be used instead")
     ap_output.add_argument("-O", "--open", action="store_true", help="if writing output to a file, try to immediately open the file in the default web browser afterwards")
     ap_output.add_argument("-c", "--compression", default="auto", choices=["auto", "none", "gzip"], help="how to compress the contents (default: auto)")
@@ -19,15 +22,15 @@ def read_input_file(args) -> tuple[bytes,str]:
     Returns file contents and file name as a tuple
     """
     try:
-        if args.file == "-":
+        if args.input == "-":
             # Read the buffer to get data as binary
             return (sys.stdin.buffer.read(), "stdin.txt")
         else:
-            file_name = os.path.basename(args.file)
-            with open(args.file, "rb") as f:
+            file_name = os.path.basename(args.input)
+            with open(args.input, "rb") as f:
                 return (f.read(), file_name)
     except:
-        print(f"[!] Failed to load input file '{args.file}'")
+        print(f"[!] Failed to load input file '{args.input}'")
         exit(1)
 
 

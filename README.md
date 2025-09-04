@@ -184,7 +184,7 @@ The rest of the project is under the MIT license, so you can do whatever as long
 - @TODO: Make interactive mode that will guide user through file creation
 
 - Refactoring of the python code to make it usable as a library
-- **Breaking change**: Added `encrypt` subcommand to hide encryption only flags from default help page
+- **Breaking change**: Implemented different subcommands (`html`, `encrypted-html`, `svg`, `encrypted-svg`) that only have the arguments that they support.
 - **Breaking change**: Removed `self-unzip-html.py` script, use `self-unzip-html` instead.
 - Allow specifying multiple values for `--compression` and `--encoding` like `--encoding hex,base64,ascii85`
 - Added `--iterations` option the PBKDF2, enabling a custom speed / security tradeoff
