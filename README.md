@@ -16,12 +16,6 @@ Currently there are multiple actions implemented, that can be executed, after th
 - `--driveby-redirect <REDIRECT_URL>`: Perform a driveby download and redirect to the `REDIRECT_URL` (example usecase: phishing)
 - `--custom <YOUR_JAVASCRIPT_CODE>`: This allows you to write your own action as JavaScript code
 
-## Demo
-
-You can try the online demo at [self-extracting-html.six-two.dev](https://self-extracting-html.six-two.dev/).
-This version is the same as the web version described below.
-It is entirely client-site, your files do not get uploaded to a server.
-
 ## Installation
 
 There are both a web and a python version. The web version is not actively developed anymore and very bare bones, but easy to use and requires no installation. The Python version has more features and is generally recommended.
@@ -190,7 +184,9 @@ The rest of the project is under the MIT license, so you can do whatever as long
 - @TODO: Make interactive mode that will guide user through file creation
 
 - Refactoring of the python code to make it usable as a library
-- Added `encrypt` subcommand to hide encryption only flags from default help page
+- **Breaking change**: Added `encrypt` subcommand to hide encryption only flags from default help page
+- **Breaking change**: Removed `self-unzip-html.py` script, use `self-unzip-html` instead.
+- Allow specifying multiple values for `--compression` and `--encoding` like `--encoding hex,base64,ascii85`
 - Added `--iterations` option the PBKDF2, enabling a custom speed / security tradeoff
 - Added `--cache-password` option
 - Added option to supply decryption password via `localStorage`: `localStorage.setItem("self_unzip_pw", "YOUR_PASSWORD_HERE")`

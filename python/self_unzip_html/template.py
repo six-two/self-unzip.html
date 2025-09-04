@@ -1,3 +1,5 @@
+import os
+
 SCRIPT_TAG_TEMPLATE_FOR_SVG_FILES = """
     <script>
         {{LIBRARY_CODE}}
@@ -7,6 +9,11 @@ SCRIPT_TAG_TEMPLATE_FOR_SVG_FILES = """
         {{GLUE_CODE}}
     </script>
 """
+
+SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
+DEFAULT_SVG_TEMPLATE_PATH = os.path.join(SCRIPT_DIR, "default.svg")
+DEFAULT_HTML_TEMPLATE_PATH = os.path.join(SCRIPT_DIR, "template.html")
+
 
 
 def get_svg_template(template_path: str) -> str:

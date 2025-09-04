@@ -1,6 +1,6 @@
 from argparse import ArgumentParser
 # local
-from ..crypto import BaseEncryptor
+from ..crypto import BaseEncryptor, NullEncryptor
 
 def register_encryption_argument_parser(ap: ArgumentParser) -> None:
     subparsers = ap.add_subparsers(dest="encrypt", required=False)
