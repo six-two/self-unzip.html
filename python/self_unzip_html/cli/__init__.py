@@ -14,6 +14,7 @@ from .action import register_action_argument_parser, get_javascript
 from .encryption import register_encryption_argument_parser, get_encryptor
 from .template import register_template_argument_parser, get_page_template, is_svg
 from .output import register_output_argument_parser, read_input_file, write_output_file, get_compression_list, get_encoding_list
+from .server import register_server_argument_parser, start_server
 
 
 def main_wrapped() -> None:
@@ -34,6 +35,10 @@ def main_wrapped() -> None:
         register_action_argument_parser(ap_subcommand, subcommand)
         register_encryption_argument_parser(ap_subcommand, subcommand)
         register_template_argument_parser(ap_subcommand, subcommand)
+    
+    ap_serve = subparsers.add_parser("serve", description="start HTTP server", help="start HTTP server")
+    ap_serve.add_argument("-q", "--quiet", action="store_true", help="minimize console output")
+    register_server_argument_parser(ap_serve)
 
     args = ap.parse_args()
 
@@ -41,6 +46,15 @@ def main_wrapped() -> None:
         global PRINT_INFO_MESSAGES
         PRINT_INFO_MESSAGES = True
 
+    if args.encoder == "serve":
+        main_serve(args)
+    else:
+        main_encode(args)
+
+def main_serve(args):
+    start_server(args.bind, args.port)
+
+def main_encode(args):
     input_data, file_name = read_input_file(args)
     page_builder = PageBuilder(
         get_page_template(args),
@@ -54,6 +68,8 @@ def main_wrapped() -> None:
     )
     html_page = page_builder.build_page(input_data)
     write_output_file(args, html_page)
+
+
 
 
 def main():
