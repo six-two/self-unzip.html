@@ -6,22 +6,47 @@ import posixpath
 from urllib.parse import unquote
 from http.server import HTTPServer, BaseHTTPRequestHandler
 # local
-from ..template import get_html_template, get_svg_template
-from ..crypto import NullEncryptor
-from ..page_builder import PageBuilder, Compression, Encoding, DEFAULT_TEMPLATE_FILE, DEFAULT_SVG_FILE
+from . import Subcommand
+from .template import get_initial_page_contents
+from .encryption import get_encryptor
+from .output import get_compression_list, get_encoding_list
+from ..template import get_html_template, get_svg_template, DEFAULT_HTML_TEMPLATE_PATH
+from ..page_builder import PageBuilder
 from ..static_js import JS_DOWNLOAD, JS_DOWNLOAD_SVG
 
 
-def register_server_argument_parser(ap: ArgumentParser):
-    ap.add_argument("-b", "--bind", default="0.0.0.0", help="IP address to bind to (default: 0.0.0.0)")
-    ap.add_argument("-p", "--port", type=int, default=8000, help="port to bind to (default: 8000)")
+def register_server_argument_parser(ap: ArgumentParser, subcommand: Subcommand):
+    if subcommand == Subcommand.SERVE:
+        ap_server = ap.add_argument_group("Server options")
+        ap_server.add_argument("-b", "--bind", default="0.0.0.0", help="IP address to bind to (default: 0.0.0.0)")
+        ap_server.add_argument("port", nargs="?", type=int, default=8000, help="port to bind to (default: 8000)")
 
 class HTMLSmugglingServer(HTTPServer):
-    def __init__(self, server_address, RequestHandlerClass):
+    def __init__(self, server_address, RequestHandlerClass, args):
         super().__init__(server_address, RequestHandlerClass)
-        self.html_template = get_html_template(DEFAULT_TEMPLATE_FILE, "File Download", "File download link should be shown immediately")
-        self.svg_template = get_svg_template(DEFAULT_SVG_FILE)
-        self.encryptor = NullEncryptor()
+
+        try:
+            self.svg_template = get_svg_template(args.svg)
+        except:
+            raise Exception(f"Failed to load SVG file '{args.svg}'. Try specifying a different file with the --svg option")
+
+        template_file = args.template or DEFAULT_HTML_TEMPLATE_PATH
+        initial_page_contents = get_initial_page_contents(args)
+        try:
+            self.html_template = get_html_template(template_file, args.title, initial_page_contents)
+        except:
+            raise Exception(f"Failed to load template file '{template_file}'. Try specifying a different file with the --template option")
+
+        self.compression_list = get_compression_list(args)
+        self.encoding_list = get_encoding_list(args)
+        self.obscure_action = args.obscure_action
+        self.insert_debug_statements = args.console_log
+
+        self.encryptor = get_encryptor(args)
+
+        # self.html_template = get_html_template(DEFAULT_TEMPLATE_FILE, "File Download", "File download link should be shown immediately")
+        # self.svg_template = get_svg_template(DEFAULT_SVG_FILE)
+        # self.encryptor = NullEncryptor()
 
 
 class HTMLSmugglingRequestHandler(BaseHTTPRequestHandler):
@@ -60,38 +85,38 @@ class HTMLSmugglingRequestHandler(BaseHTTPRequestHandler):
         with open(path, "rb") as f:
             file_contents = f.read()
 
-        html_page_builder = PageBuilder(
-            self.server.html_template,
-            JS_DOWNLOAD.replace("{{NAME}}", file_name),
-            self.server.encryptor,
-            compression_list = [Compression.NONE],
-            encoding_list = [Encoding.BASE64],
-        )
-        html_str = html_page_builder.build_page(file_contents)
+        file_contents = self.build_page(file_name, file_contents, self.server.html_template, JS_DOWNLOAD, False)
 
         self.send_response(200)
         self.send_header("Content-type", "text/html; charset=utf-8")
         self.end_headers()
-        self.wfile.write(html_str.encode())
+        self.wfile.write(file_contents)
 
     def serve_svg(self, path):
         file_name = os.path.basename(path)
         with open(path, "rb") as f:
             file_contents = f.read()
 
-        html_page_builder = PageBuilder(
-            self.server.svg_template,
-            JS_DOWNLOAD_SVG.replace("{{NAME}}", file_name),
-            self.server.encryptor,
-            compression_list = [Compression.NONE],
-            encoding_list = [Encoding.BASE64],
-        )
-        html_str = html_page_builder.build_page(file_contents)
+        file_contents = self.build_page(file_name, file_contents, self.server.svg_template, JS_DOWNLOAD_SVG, True)
 
         self.send_response(200)
-        self.send_header("Content-type", "text/html; charset=utf-8")
+        self.send_header("Content-type", "image/svg+xml")
         self.end_headers()
-        self.wfile.write(html_str.encode())
+        self.wfile.write(file_contents)
+
+    def build_page(self, file_name: str, file_contents: bytes, template: str, js_payload: str, is_svg: bool) -> bytes:
+        html_page_builder = PageBuilder(
+            template,
+            js_payload.replace("{{NAME}}", file_name),
+            self.server.encryptor,
+            obscure_action=self.server.obscure_action,
+            encode_library_as_base64=False,
+            insert_debug_statements=self.server.insert_debug_statements,
+            compression_list = self.server.compression_list,
+            encoding_list = self.server.encoding_list,
+        )
+        html_str = html_page_builder.build_page(file_contents)
+        return html_str.encode()
 
     def list_directory(self, path):
         try:
@@ -133,10 +158,10 @@ class HTMLSmugglingRequestHandler(BaseHTTPRequestHandler):
         return base_path
 
 
-def start_server(bind_ip: str, bind_port: int):
+def start_server(bind_ip: str, bind_port: int, args):
     try:
         server_address = (bind_ip, bind_port)
-        httpd = HTMLSmugglingServer(server_address, HTMLSmugglingRequestHandler)
+        httpd = HTMLSmugglingServer(server_address, HTMLSmugglingRequestHandler, args)
         print(f"Serving at http://{bind_ip}:{bind_port}")
         httpd.serve_forever()
     except KeyboardInterrupt:

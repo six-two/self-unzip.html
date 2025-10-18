@@ -4,10 +4,11 @@ from . import Subcommand
 from ..crypto import BaseEncryptor, NullEncryptor
 
 def register_encryption_argument_parser(ap: ArgumentParser, subcommand: Subcommand) -> None:
-    if subcommand in [Subcommand.HTML_ENCRYPTED, Subcommand.SVG_ENCRYPTED]:
+    if subcommand in [Subcommand.HTML_ENCRYPTED, Subcommand.SVG_ENCRYPTED, Subcommand.SERVE]:
+        require_password = subcommand != Subcommand.SERVE
         # Only show encryption options when an encrypted subcommand is used
         ap_encryption = ap.add_argument_group("Encryption Options")
-        ap_encryption.add_argument("-p", "--password", required=True, help="encrypt the compressed data using this password")
+        ap_encryption.add_argument("-p", "--password", required=require_password, help="encrypt the compressed data using this password")
         ap_encryption.add_argument("-P", "--password-prompt", default="Please enter the decryption password", help="provide your custom password prompt, that can for example be used to provide a password hint")
         ap_encryption.add_argument("-C", "--cache-password", action="store_true", help="cache password to localStorage, so that you can reload the page without entering password again")
         ap_encryption.add_argument("--iterations", "-I", type=int, default=1_000_000, help="minimum number of iterations for the PBKDF2 key derivation function")

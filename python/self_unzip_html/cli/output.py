@@ -6,12 +6,15 @@ from . import Subcommand
 from ..page_builder import Compression, Encoding
 from ..util import print_info
 
-def register_output_argument_parser(ap: ArgumentParser, _subcommand: Subcommand):
-    ap.add_argument("-i", "--input", metavar="INPUT_FILE", required=True, help="the file to encode. Use '-' to read from standard input")
+def register_output_argument_parser(ap: ArgumentParser, subcommand: Subcommand):
+    if subcommand != Subcommand.SERVE:
+        ap.add_argument("-i", "--input", metavar="INPUT_FILE", required=True, help="the file to encode. Use '-' to read from standard input")
 
     ap_output = ap.add_argument_group("Output Options")
-    ap_output.add_argument("-o", "--output", help="the location to write the output to. If not specified stdout will be used instead")
-    ap_output.add_argument("-O", "--open", action="store_true", help="if writing output to a file, try to immediately open the file in the default web browser afterwards")
+    if subcommand != Subcommand.SERVE:
+        ap_output.add_argument("-o", "--output", help="the location to write the output to. If not specified stdout will be used instead")
+        ap_output.add_argument("-O", "--open", action="store_true", help="if writing output to a file, try to immediately open the file in the default web browser afterwards")
+
     ap_output.add_argument("-c", "--compression", default="auto", choices=["auto", "none", "gzip"], help="how to compress the contents (default: auto)")
     ap_output.add_argument("-e", "--encoding", default="auto", choices=["auto", "base64", "ascii85", "hex"], help="how to encode the binary data  (default: auto). base64 may not work for large contents (>65kB) due to different browser limitations")
     ap_output.add_argument("--console-log", action="store_true", help="insert debug statements to see the output of the individual steps")

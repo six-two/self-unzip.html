@@ -6,9 +6,9 @@ from ..template import get_svg_template, get_html_template, DEFAULT_HTML_TEMPLAT
 
 def register_template_argument_parser(ap: ArgumentParser, subcommand: Subcommand):
     ap_template = ap.add_argument_group("Template Settings")
-    if subcommand in [Subcommand.SVG, Subcommand.SVG_ENCRYPTED]:
+    if subcommand in [Subcommand.SVG, Subcommand.SVG_ENCRYPTED, Subcommand.SERVE]:
         ap_template.add_argument("--svg", metavar="SVG_FILE_PATH", nargs="?", default=DEFAULT_SVG_TEMPLATE_PATH, help="use this SVG instead of a normal HTML page for the smuggling")
-    else:
+    if subcommand in [Subcommand.HTML, Subcommand.HTML_ENCRYPTED, Subcommand.SERVE]:
         ap_template.add_argument("--template", help="use this template file instead of the default one")
         ap_template.add_argument("--title", default="Self Extracting Page", help="set the title of the HTML page")
         initial_page_contents_mutex = ap_template.add_mutually_exclusive_group()
