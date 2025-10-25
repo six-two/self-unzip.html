@@ -46,6 +46,7 @@ def main_wrapped() -> None:
     # Set default values to prevent AttributeErrors later on
     add_if_does_not_exist(args, "password", None)
     add_if_does_not_exist(args, "replace", False)
+    add_if_does_not_exist(args, "copy_base64", False)
     add_if_does_not_exist(args, "copy_text", False)
 
     if not args.quiet:
