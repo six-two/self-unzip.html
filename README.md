@@ -44,7 +44,12 @@ You can install it with `pip` or docker.
 
 #### pip
 
-To install the latest release:
+To install the latest release with encryption support:
+```bash
+python3 -m pip install -U self-unzip-html[all]
+```
+
+To install the latest release without encryption support:
 ```bash
 python3 -m pip install -U self-unzip-html
 ```
@@ -191,14 +196,14 @@ The rest of the project is under the MIT license, so you can do whatever as long
 
 ## Notable changes
 
-### Head
+### Version 0.3.0
 
-- Renamed `--download` to `--download-link` and added `--download-auto` which automatically starts the download
+- **Breaking change**: Removed `self-unzip-html.py` script, use `self-unzip-html` instead.
+- **Breaking change**: Implemented different subcommands (`html`, `encrypted-html`, `svg`, `encrypted-svg`) that only have the arguments that they support.
+- **Breaking change**: Renamed `--download` to `--download-link` and added `--download-auto` which automatically starts the download
 - Added `--copy-text` and `--copy-base64` options for smuggling files when downloads are not possible (for example in remote browsing setups)
 - Added `serve` subcommand that serves the current directory and allows downloading files directly or via HTML smuggling. Each file in a directory listing has an entry like `.DS_Store (HTML, SVG)`.
 - Refactoring of the python code to make it usable as a library
-- **Breaking change**: Implemented different subcommands (`html`, `encrypted-html`, `svg`, `encrypted-svg`) that only have the arguments that they support.
-- **Breaking change**: Removed `self-unzip-html.py` script, use `self-unzip-html` instead.
 - Allow specifying multiple values for `--compression` and `--encoding` like `--encoding hex,base64,ascii85`
 - Added `--iterations` option the PBKDF2, enabling a custom speed / security tradeoff
 - Added `--cache-password` option
