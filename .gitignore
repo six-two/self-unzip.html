@@ -9,6 +9,8 @@ PsExec.exe
 psexec.html
 psexec.svg
 psexec_encrypted.html
+test_auto.svg
+test_auto_encrypted.svg
 
 ########## Default python gitignore ##########
 # Byte-compiled / optimized / DLL files
