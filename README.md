@@ -181,6 +181,7 @@ The rest of the project is under the MIT license, so you can do whatever as long
 
 ### Head
 
+- Added `--copy-text` and `--copy-base64` options for smuggling files when downloads are not possible (for example in remote browsing setups)
 - Added `serve` subcommand that serves the current directory and allows downloading files directly or via HTML smuggling. Each file in a directory listing has an entry like `.DS_Store (HTML, SVG)`.
 - Refactoring of the python code to make it usable as a library
 - **Breaking change**: Implemented different subcommands (`html`, `encrypted-html`, `svg`, `encrypted-svg`) that only have the arguments that they support.
