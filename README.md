@@ -7,22 +7,21 @@ This [repo](https://github.com/six-two/self-unzip.html) contains tools to create
 It works by taking a payload, compressing it, and encoding the results using ASCII85.
 It then puts the resulting string in a template file, that contains the code to decode and decompress the payload again.
 
-Currently there are multiple actions implemented, that can be executed, after the payload is decoded:
+Currently, there are multiple actions implemented, that can be executed, after the payload is decoded:
 
-- `--eval`: Execute payload as JavaScript code (example usecase: obfuscate malicious JS code)
-- `--replace`: Show payload as HTML page (example usecase: compress a big web page)
-- `--show-text`: Show payload as text (example usecase: compress a big text file)
-- `--download`: Download the payload as a file (example usecase: bypass antivirus / filters)
-- `--driveby-redirect <REDIRECT_URL>`: Perform a driveby download and redirect to the `REDIRECT_URL` (example usecase: phishing)
+- `--download`: Download the payload as a file when clicking a button (example use case: bypass antivirus / filters)
+- @TODO: `--download-auto`: Automatically download the payload as a file when the page is opened (example use case: bypass antivirus / filters)
+- `--driveby-redirect <REDIRECT_URL>`: Perform a drive-by download and redirect to the `REDIRECT_URL` (example use case: phishing)
+- `--eval`: Execute payload as JavaScript code (example use case: obfuscate malicious JS code)
+- `--replace`: Show payload as HTML page (example use case: compress a big web page)
+- `--show-text`: Show payload as text (example use case: compress a big text file)
+- `--copy-text`: Copy payload as text to the clipboard (example use case: download PowerShell script in remote browsing environment)
+- `--copy-base64`: Copy payload as base64 encoded text and show commands that can be used to decode it (example use case: download executable file in remote browsing environment)
 - `--custom <YOUR_JAVASCRIPT_CODE>`: This allows you to write your own action as JavaScript code
-
-## Installation
 
 There are both a web and a python version. The web version is not actively developed anymore and very bare bones, but easy to use and requires no installation. The Python version has more features and is generally recommended.
 
-### Current feature comparision
-
-Currently the python version has the most features.
+## Feature comparison
 
 Feature | Web version | Python version
 ---|---|---
@@ -31,12 +30,15 @@ Ascii85 encoding | yes | yes
 GZIP compression | yes, always | yes, can be disabled
 AES-GCM encryption | no | yes
 Automatic detection of most efficient algorithms | no | yes
+Payload actions | download, eval, replace | all
 
-### Python version
+## Python version
 
 A Python script to generate self extracting web pages is under `python/main.py`.
 It just requires a modern Python version (probably Python3.9+) and has no mandatory external dependencies.
 But if you want to use the encryption feature, you need to install `pycryptodomex` with pip.
+
+### Installation
 
 You can install it with `pip` or docker.
 
@@ -54,25 +56,14 @@ python3 -m pip install .
 
 Example usage of the pip package:
 ```bash
-self-unzip-html --download -o psexec.html ~/Downloads/SysinternalsSuite/PsExec.exe
-```
-
-Or if you wanted to password-protect the output:
-```bash
-self-unzip-html --download -o psexec.html -p YourPasswordHere ~/Downloads/SysinternalsSuite/PsExec.exe
-```
-
-Instead of HTML pages, you can also embedd a HTML smuggling payload in an SVG file:
-```bash
-self-unzip-html -O psexec.html --download -o 
-smuggling.svg --svg
+self-unzip-html html --download -o psexec.html -i PsExec.exe
 ```
 
 #### Docker
 
 You can use the image pushed to ghcr.io:
 ```bash
-docker run --rm -v "$PWD:/share" ghcr.io/six-two/self-unzip-html --download -o psexec.html ./PsExec.exe 
+docker run --rm -v "$PWD:/share" ghcr.io/six-two/self-unzip-html html --download -o psexec.html -i ./PsExec.exe 
 ```
 
 To use the bleeding edge version (`main` branch), you can build the `Dockerfile`:
@@ -82,8 +73,29 @@ docker build -t self-unzip-html .
 
 Usage of docker image:
 ```bash
-docker run --rm -v "$PWD:/share" self-unzip-html --download -o psexec.html ./PsExec.exe 
+docker run --rm -v "$PWD:/share" self-unzip-html html --download -o psexec.html -i ./PsExec.exe 
 ```
+
+### Usage
+
+Do a basic HTML smuggling, that will show download link for an executable file:
+```bash
+self-unzip-html html --download -o psexec.html -i PsExec.exe
+```
+
+Or if you wanted to password-protect the output:
+```bash
+self-unzip-html encrypted-html --download -o psexec_encrypted.html -p YourPasswordHere -i PsExec.exe
+```
+
+Instead of HTML pages, you can also embed an HTML smuggling payload in an SVG file:
+```bash
+self-unzip-html svg -i PsExec.exe --download -o psexec.svg
+```
+
+Please note that not all payload actions are available for SVGs due to technical limitations.
+Use `self-unzip-html svg --help` to list supported actions. 
+
 
 You can show all flags with the `--help` flag and can see some example commands in `./test.sh`.
 
@@ -95,7 +107,7 @@ If you want to use it for phishing (sending a download link to a malicious file)
 
 Just search for a "thank you for downloading" page that does not start a download. There are many of them for software like Skype, AnyDesk, etc. Then rename your payload file to something an visitor of the download page would expect and create the HTML smuggling page:
 ```bash
-self-unzip-html.py AnyDesk.exe -o anydesk-download.html --driveby-redirect https://anydesk.com/en/downloads/guide/thank-you --obscure-action
+self-unzip-html html -i AnyDesk.exe -o anydesk-download.html --driveby-redirect https://anydesk.com/en/downloads/guide/thank-you --obscure-action
 ```
 
 Host that HTML file on your server and link to it in your emails.
@@ -108,26 +120,26 @@ If data security is very important to you may want to manually encrypt it before
 
 You can automatically decrypt a page by adding the password as the hash in a URL like `encrypted.html#monkey123!`.
 The hash will not be sent to the server, so your password may only be stored locally (in your browsing history).
-Otherwise a prompt will ask you for the password.
+Otherwise, a prompt will ask you for the password.
 
 #### Custom actions
 
 With the `--custom` flag you can specify your own JavaScript that should handle the unpacked data. The data is passed via the `og_data` parameter.
 The value is an Uint8Array which represents the bytes of the input file. If you want to interpret it as UTF-8 text and convert it to a string, you can use `new TextDecoder().decode(og_data)`.
-If you want to build your payload based on one of the builtin payloads, you can find them in `python/self_unzip_html/static_js.py`
+If you want to build your payload based on one of the built-in payloads, you can find them in `python/self_unzip_html/static_js.py`
 
-When debugging your own payload it can be useful to see go through it step by step. For this I find it easiest to create an page with:
+When debugging your own payload it can be useful to see go through it step by step. For this I find it easiest to create a page with:
 ```bash
-self-unzip-html README.md --custom 'window.og_data = og_data' -o test_custom.html
+self-unzip-html html -i README.md --custom 'window.og_data = og_data' -o test_custom.html
 ```
-The resulting page exposes og_data in the global scope. You can then paste your payload into the JavaScript console piece by piece and inspect the output or DOM in between.
+The resulting page exposes `og_data` in the global scope. You can then paste your payload into the JavaScript console piece by piece and inspect the output or DOM in between.
 
-### Web version
+## Web version
 
 There is a bare-bones page generator written in plain HTML and JavaScript.
 To use it, just clone the repo and put the contents of the `site` directory somewhere in your web server directory.
 
-You can of course also use it with Python's built in web server:
+You can of course also use it with Python's built-in web server:
 ```bash
 python3 -m http.server --directory ./site/
 ```
@@ -164,7 +176,7 @@ This command should create `output/main.js`
 
 The next step is optional.
 If you want to skip it, just rename `main.min.js` to `main.js` in the `output` directory.
-Otherwise minify the code (may require you to install an external minifier like closure-compiler).
+Otherwise, minify the code (may require you to install an external minifier like closure-compiler or <https://jscompressor.treblereel.dev/>).
 
 ```bash
 closure-compiler output/main.js --js_output_file output/main.min.js
