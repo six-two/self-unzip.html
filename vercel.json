@@ -1,0 +1,6 @@
+{
+    "outputDirectory": "site",
+    "github": {
+        "silent": true
+    }
+}
