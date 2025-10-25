@@ -24,7 +24,7 @@ JS_SHOW_TEXT = 'setTimeout(()=>{let d=document.open(); d.write("<!DOCTYPE html><
 
 JS_SHOW_TEXT_SVG = 'document.querySelector("svg").innerHTML=atob("PHRleHQgeD0iMTAiIHk9IjIwIiBmb250LXNpemU9IjIwIj5Zb3Ugc2hvdWxkIG5vdCBzZWUgdGhpczwvdGV4dD4=");text=new TextDecoder().decode(og_data);document.querySelector("text").textContent=text; console.log(text)'
 
-JS_COPY_TEXT = """let d=document.open(); let t=new TextDecoder().decode(og_data); d.write('<button>copy</button>'); let b=d.querySelector("button"); b.onclick=()=>{navigator.clipboard.writeText(t).then(()=>{b.textContent="copied";setTimeout(()=>b.textContent="copy",2000);}).catch(e=>{console.error(e);b.textContent="copy failed";setTimeout(()=>b.textContent="copy",2000);})};"""
+JS_COPY_TEXT = """setTimeout(()=>{let d=document.open(); let t=new TextDecoder().decode(og_data); d.write('<h2>Copy file as text</h2><button>copy</button>'); let b=d.querySelector("button"); b.onclick=()=>{navigator.clipboard.writeText(t).then(()=>{b.textContent="copied";setTimeout(()=>b.textContent="copy",2000);}).catch(e=>{console.error(e);b.textContent="copy failed";setTimeout(()=>b.textContent="copy",2000);})}}, 50);"""
 
 JS_DOWNLOAD = 'let b=new Blob([og_data],{type:"application/octet-stream"});let u=URL.createObjectURL(b);document.body.innerHTML=`<h1>Unpacked {{NAME}}</h1><a href="${u}" download="{{NAME}}">Click here to download</a>`'
 

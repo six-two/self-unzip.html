@@ -1,4 +1,4 @@
-// IMPORTANT NOTE: After compiling the code, replace the last value 'window.something' (passed to the function like '[...]})})(window.g);') with 'og_data'. Also remove the 'use strict' at the beginning.
+// IMPORTANT NOTE: After compiling the code, replace the 'window.something' (usually it was 'window.g') with 'og_data'. Also remove the 'use strict' at the beginning.
 
 async function uint8ToBase64Async(uint8Array) {
   const blob = new Blob([uint8Array]);
@@ -15,8 +15,8 @@ async function uint8ToBase64Async(uint8Array) {
 }
 
 function main(og_data) {
-  // Create new page
-  let doc = document.open();
+  uint8ToBase64Async(og_data).then((base64) => {
+      let doc = document.open();
   doc.write(
       '<style>textarea {width: 100%;}</style>'
       + '<h2>Copy button</h2><button>copy as base64</button>'
@@ -31,7 +31,6 @@ function main(og_data) {
       setTimeout(() => button.textContent="copy as base64", 2000);
   }
 
-  uint8ToBase64Async(og_data).then((base64) => {
       let button = doc.querySelector("button");
       button.onclick=()=>{
         navigator.clipboard.writeText(base64)
@@ -41,4 +40,4 @@ function main(og_data) {
   });
 }
 
-main(window.og_data);
+setTimeout(()=>main(window.og_data), 50);
