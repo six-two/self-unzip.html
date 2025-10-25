@@ -6,6 +6,7 @@ test_*.html
 AnyDesk.exe
 anydesk-download.html
 PsExec.exe
+PsExec_.exe
 psexec.html
 psexec.svg
 psexec_encrypted.html

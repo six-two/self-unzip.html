@@ -1,5 +1,6 @@
 from argparse import ArgumentParser
 from typing import Any
+from html import escape
 # local
 from . import Subcommand
 from ..static_js import JS_DOWNLOAD_LINK, JS_DOWNLOAD_AUTO, JS_DOWNLOAD_SVG, JS_DRIVEBY_REDIRECT, JS_DRIVEBY_REDIRECT_SVG, JS_EVAL, JS_REPLACE, JS_SHOW_TEXT, JS_SHOW_TEXT_SVG, JS_COPY_TEXT
@@ -34,20 +35,20 @@ def get_javascript(args: Any, file_name: str, is_svg: bool) -> str:
     if args.download_link != None:
         # If argument is empty, use the name of the input file, otherwise use the user provided value
         download_file_name = file_name if args.download_link == NO_ARG else args.download_link
-        return JS_DOWNLOAD_LINK.replace("{{NAME}}", download_file_name)
+        return JS_DOWNLOAD_LINK.replace("{{NAME}}", escape(download_file_name))
     elif args.download_auto != None:
         # If argument is empty, use the name of the input file, otherwise use the user provided value
         base_code = JS_DOWNLOAD_SVG if is_svg else JS_DOWNLOAD_AUTO
         download_file_name = file_name if args.download_auto == NO_ARG else args.download_auto
-        return base_code.replace("{{NAME}}", download_file_name)
+        return base_code.replace("{{NAME}}", escape(download_file_name))
     elif args.eval:
         return JS_EVAL
     elif args.replace:
         return JS_REPLACE
     elif args.copy_text:
-        return JS_COPY_TEXT
+        return JS_COPY_TEXT.replace("{{NAME}}", escape(file_name))
     elif args.copy_base64:
-        return COPY_BASE64
+        return COPY_BASE64.replace("{{NAME}}", escape(file_name))
     elif args.show_text:
         return JS_SHOW_TEXT_SVG if is_svg else JS_SHOW_TEXT
     elif args.driveby_redirect != None:
