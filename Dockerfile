@@ -1,11 +1,13 @@
 # Create a base image
 FROM python:slim
 LABEL org.opencontainers.image.source="https://github.com/six-two/self-unzip.html"
-RUN pip install --no-cache-dir --root-user-action=ignore pycryptodomex
 
 # Install the app
 COPY . /app
-RUN pip install --root-user-action=ignore /app
+RUN pip install --no-cache-dir --root-user-action=ignore pycryptodomex /app
+
+# Run as low privileged user by default
+USER 1000
 
 # Just for convenience / app configuration
 WORKDIR /share
