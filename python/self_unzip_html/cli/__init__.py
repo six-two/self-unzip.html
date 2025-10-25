@@ -17,6 +17,9 @@ from .template import register_template_argument_parser, get_page_template, is_s
 from .output import register_output_argument_parser, read_input_file, write_output_file, get_compression_list, get_encoding_list
 from .server import register_server_argument_parser, start_server
 
+def add_if_does_not_exist(args, name: str, value) -> None:
+    if not hasattr(args, name):
+        setattr(args, name, value)
 
 def main_wrapped() -> None:
     # @TODO: Support multiple input files for certain options (download, driveby, etc)?
@@ -40,6 +43,10 @@ def main_wrapped() -> None:
         register_template_argument_parser(ap_subcommand, subcommand)
 
     args = ap.parse_args()
+    # Set default values to prevent AttributeErrors later on
+    add_if_does_not_exist(args, "password", None)
+    add_if_does_not_exist(args, "replace", False)
+    add_if_does_not_exist(args, "copy_text", False)
 
     if not args.quiet:
         global PRINT_INFO_MESSAGES
