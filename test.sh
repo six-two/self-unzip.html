@@ -35,7 +35,7 @@ self-unzip-html encrypted-html -i README.md -o test_b64_encrypt.html -e base64 -
 self-unzip-html encrypted-html -i README.md -o test_b85_gzip_encrypt.html -e ascii85 -c gzip -p test --replace
 # other modes
 echo 'alert("Looks like it still works :)")' | self-unzip-html html -i - -o test_eval_b64_gzip.html -e base64 -c gzip --eval
-self-unzip-html encrypted-html -i README.md -o test_download_b85_encrypt.html -e ascii85 -c none -p test --download
+self-unzip-html encrypted-html -i README.md -o test_download_b85_encrypt.html -e ascii85 -c none -p test --download-link
 self-unzip-html html -i README.md -e base64 -c none --show-text -o test_show.html
 self-unzip-html encrypted-html -i README.md -o test_custom.html -e ascii85 -c none -p test --custom 'alert(og_data)'
 # Usually you want to redirect to a thank you page, since this legitimizes the downlod you just started

@@ -13,7 +13,7 @@ from .encryption import get_encryptor
 from .output import get_compression_list, get_encoding_list
 from ..template import get_html_template, get_svg_template, DEFAULT_HTML_TEMPLATE_PATH
 from ..page_builder import PageBuilder
-from ..static_js import JS_DOWNLOAD, JS_DOWNLOAD_SVG
+from ..static_js import JS_DOWNLOAD_LINK, JS_DOWNLOAD_SVG
 
 
 def register_server_argument_parser(ap: ArgumentParser, subcommand: Subcommand):
@@ -94,7 +94,7 @@ class HTMLSmugglingRequestHandler(BaseHTTPRequestHandler):
         with open(path, "rb") as f:
             file_contents = f.read()
 
-        file_contents = self.build_page(file_name, file_contents, self.server.html_template, JS_DOWNLOAD, False)
+        file_contents = self.build_page(file_name, file_contents, self.server.html_template, JS_DOWNLOAD_LINK, False)
 
         self.send_response(200)
         self.send_header("Content-type", "text/html; charset=utf-8")

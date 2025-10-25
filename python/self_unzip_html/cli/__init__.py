@@ -44,8 +44,10 @@ def main_wrapped() -> None:
 
     args = ap.parse_args()
     # Set default values to prevent AttributeErrors later on
+    # Needs to be done for all flags (mainly actions) that are not always available
     add_if_does_not_exist(args, "password", None)
     add_if_does_not_exist(args, "replace", False)
+    add_if_does_not_exist(args, "download_link", None)
     add_if_does_not_exist(args, "copy_base64", False)
     add_if_does_not_exist(args, "copy_text", False)
 

@@ -2,15 +2,19 @@ from argparse import ArgumentParser
 from typing import Any
 # local
 from . import Subcommand
-from ..static_js import JS_DOWNLOAD, JS_DOWNLOAD_SVG, JS_DRIVEBY_REDIRECT, JS_DRIVEBY_REDIRECT_SVG, JS_EVAL, JS_REPLACE, JS_SHOW_TEXT, JS_SHOW_TEXT_SVG, JS_COPY_TEXT
+from ..static_js import JS_DOWNLOAD_LINK, JS_DOWNLOAD_AUTO, JS_DOWNLOAD_SVG, JS_DRIVEBY_REDIRECT, JS_DRIVEBY_REDIRECT_SVG, JS_EVAL, JS_REPLACE, JS_SHOW_TEXT, JS_SHOW_TEXT_SVG, JS_COPY_TEXT
 from ..minified_js import COPY_BASE64
-from ..util import OperationNotImplemented
+
+NO_ARG="NO_ARGUMENT_SUPPLIED"
 
 def register_action_argument_parser(ap: ArgumentParser, subcommand: Subcommand):
     if subcommand != Subcommand.SERVE: #@TODO: figure out how to do it later
         payload_option_visual_group = ap.add_argument_group("Payload Action")
         payload_option_mutex = payload_option_visual_group.add_mutually_exclusive_group(required=True)
-        payload_option_mutex.add_argument("--download", nargs="?", metavar="FILE_NAME", const="", help="show a download link to download the payload as a file. If you specify an argument that is used as the name of the file to download")
+        if subcommand not in [Subcommand.SVG, Subcommand.SVG_ENCRYPTED]:
+            payload_option_mutex.add_argument("--download-link", nargs="?", metavar="FILE_NAME", const=NO_ARG, help="show a download link to download the payload as a file. If you specify an argument that is used as the name of the file to download")
+
+        payload_option_mutex.add_argument("--download-auto", nargs="?", metavar="FILE_NAME", const=NO_ARG, help="show a download link to download the payload as a file. If you specify an argument that is used as the name of the file to download")
         payload_option_mutex.add_argument("--eval", action="store_true", help="pass the payload to eval() to run it as JavaScript code")
         if subcommand not in [Subcommand.SVG, Subcommand.SVG_ENCRYPTED]:
             # Setting the innerHTML of a svg.text always resulted in errors. So we do not show this option with SVGs
@@ -27,10 +31,15 @@ def register_action_argument_parser(ap: ArgumentParser, subcommand: Subcommand):
 
 
 def get_javascript(args: Any, file_name: str, is_svg: bool) -> str:
-    if args.download != None:
-        # If args.downlaod is empty, use the name of the input file, otherwise use the user provided value
-        base_code = JS_DOWNLOAD_SVG if is_svg else JS_DOWNLOAD
-        return base_code.replace("{{NAME}}", args.download or file_name)
+    if args.download_link != None:
+        # If argument is empty, use the name of the input file, otherwise use the user provided value
+        download_file_name = file_name if args.download_link == NO_ARG else args.download_link
+        return JS_DOWNLOAD_LINK.replace("{{NAME}}", download_file_name)
+    elif args.download_auto != None:
+        # If argument is empty, use the name of the input file, otherwise use the user provided value
+        base_code = JS_DOWNLOAD_SVG if is_svg else JS_DOWNLOAD_AUTO
+        download_file_name = file_name if args.download_auto == NO_ARG else args.download_auto
+        return base_code.replace("{{NAME}}", download_file_name)
     elif args.eval:
         return JS_EVAL
     elif args.replace:

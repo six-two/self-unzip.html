@@ -9,8 +9,8 @@ It then puts the resulting string in a template file, that contains the code to 
 
 Currently, there are multiple actions implemented, that can be executed, after the payload is decoded:
 
-- `--download`: Download the payload as a file when clicking a button (example use case: bypass antivirus / filters)
-- @TODO: `--download-auto`: Automatically download the payload as a file when the page is opened (example use case: bypass antivirus / filters)
+- `--download-link`: Download the payload as a file when clicking a button (example use case: bypass antivirus / filters)
+- `--download-auto`: Automatically download the payload as a file when the page is opened (example use case: bypass antivirus / filters)
 - `--driveby-redirect <REDIRECT_URL>`: Perform a drive-by download and redirect to the `REDIRECT_URL` (example use case: phishing)
 - `--eval`: Execute payload as JavaScript code (example use case: obfuscate malicious JS code)
 - `--replace`: Show payload as HTML page (example use case: compress a big web page)
@@ -30,7 +30,7 @@ Ascii85 encoding | yes | yes
 GZIP compression | yes, always | yes, can be disabled
 AES-GCM encryption | no | yes
 Automatic detection of most efficient algorithms | no | yes
-Payload actions | download, eval, replace | all
+Payload actions | download-link, eval, replace | all
 
 ## Python version
 
@@ -56,14 +56,14 @@ python3 -m pip install .
 
 Example usage of the pip package:
 ```bash
-self-unzip-html html --download -o psexec.html -i PsExec.exe
+self-unzip-html html --download-auto -o psexec.html -i PsExec.exe
 ```
 
 #### Docker
 
 You can use the image pushed to ghcr.io:
 ```bash
-docker run --rm -v "$PWD:/share" ghcr.io/six-two/self-unzip-html html --download -o psexec.html -i ./PsExec.exe 
+docker run --rm -v "$PWD:/share" ghcr.io/six-two/self-unzip-html html --download-auto -o psexec.html -i ./PsExec.exe 
 ```
 
 To use the bleeding edge version (`main` branch), you can build the `Dockerfile`:
@@ -73,24 +73,24 @@ docker build -t self-unzip-html .
 
 Usage of docker image:
 ```bash
-docker run --rm -v "$PWD:/share" self-unzip-html html --download -o psexec.html -i ./PsExec.exe 
+docker run --rm -v "$PWD:/share" self-unzip-html html --download-auto -o psexec.html -i ./PsExec.exe 
 ```
 
 ### Usage
 
 Do a basic HTML smuggling, that will show download link for an executable file:
 ```bash
-self-unzip-html html --download -o psexec.html -i PsExec.exe
+self-unzip-html html --download-auto -o psexec.html -i PsExec.exe
 ```
 
 Or if you wanted to password-protect the output:
 ```bash
-self-unzip-html encrypted-html --download -o psexec_encrypted.html -p YourPasswordHere -i PsExec.exe
+self-unzip-html encrypted-html --download-auto -o psexec_encrypted.html -p YourPasswordHere -i PsExec.exe
 ```
 
 Instead of HTML pages, you can also embed an HTML smuggling payload in an SVG file:
 ```bash
-self-unzip-html svg -i PsExec.exe --download -o psexec.svg
+self-unzip-html svg -i PsExec.exe --download-auto -o psexec.svg
 ```
 
 Please note that not all payload actions are available for SVGs due to technical limitations.
@@ -105,7 +105,7 @@ If you want to use it for phishing (sending a download link to a malicious file)
 
 ![Driveby Redirect Screenshot](./driveby-redirect-screenshot.png)
 
-Just search for a "thank you for downloading" page that does not start a download. There are many of them for software like Skype, AnyDesk, etc. Then rename your payload file to something an visitor of the download page would expect and create the HTML smuggling page:
+Just search for a "thank you for downloading" page that does not start a download. There are many of them for software like Skype, AnyDesk, etc. Then rename your payload file to something a visitor of the download page would expect and create the HTML smuggling page:
 ```bash
 self-unzip-html html -i AnyDesk.exe -o anydesk-download.html --driveby-redirect https://anydesk.com/en/downloads/guide/thank-you --obscure-action
 ```
@@ -193,6 +193,7 @@ The rest of the project is under the MIT license, so you can do whatever as long
 
 ### Head
 
+- Renamed `--download` to `--download-link` and added `--download-auto` which automatically starts the download
 - Added `--copy-text` and `--copy-base64` options for smuggling files when downloads are not possible (for example in remote browsing setups)
 - Added `serve` subcommand that serves the current directory and allows downloading files directly or via HTML smuggling. Each file in a directory listing has an entry like `.DS_Store (HTML, SVG)`.
 - Refactoring of the python code to make it usable as a library
@@ -203,7 +204,7 @@ The rest of the project is under the MIT license, so you can do whatever as long
 - Added `--cache-password` option
 - Added option to supply decryption password via `localStorage`: `localStorage.setItem("self_unzip_pw", "YOUR_PASSWORD_HERE")`
 - Added `--encoding hex` option
-- Added `--svg` option and ported the `--download` option to work in SVGs
+- Added support for SVG output files
 
 ### Version 0.2.1
 

@@ -26,7 +26,9 @@ JS_SHOW_TEXT_SVG = 'document.querySelector("svg").innerHTML=atob("PHRleHQgeD0iMT
 
 JS_COPY_TEXT = """setTimeout(()=>{let d=document.open(); let t=new TextDecoder().decode(og_data); d.write('<h2>Copy file as text</h2><button>copy</button>'); let b=d.querySelector("button"); b.onclick=()=>{navigator.clipboard.writeText(t).then(()=>{b.textContent="copied";setTimeout(()=>b.textContent="copy",2000);}).catch(e=>{console.error(e);b.textContent="copy failed";setTimeout(()=>b.textContent="copy",2000);})}}, 50);"""
 
-JS_DOWNLOAD = 'let b=new Blob([og_data],{type:"application/octet-stream"});let u=URL.createObjectURL(b);document.body.innerHTML=`<h1>Unpacked {{NAME}}</h1><a href="${u}" download="{{NAME}}">Click here to download</a>`'
+JS_DOWNLOAD_LINK = 'let b=new Blob([og_data],{type:"application/octet-stream"});let u=URL.createObjectURL(b);document.body.innerHTML=`<h1>Unpacked {{NAME}}</h1><a href="${u}" download="{{NAME}}">Click here to download</a>`'
+
+JS_DOWNLOAD_AUTO = 'let b=new Blob([og_data],{type:"application/octet-stream"});let u=URL.createObjectURL(b);document.body.innerHTML=`<a href="${u}" download="{{NAME}}" id="auto-click">Click here if the download does not start automatically</a>`;setTimeout(()=>document.getElementById("auto-click").click(),50)'
 
 JS_DOWNLOAD_SVG = 'let b=new Blob([og_data],{type:"application/octet-stream"});let u=URL.createObjectURL(b);let a=document.createElementNS("http://www.w3.org/1999/xhtml","a");document.querySelector("svg").appendChild(a);a.href=u;a.download="{{NAME}}";a.click()'
 

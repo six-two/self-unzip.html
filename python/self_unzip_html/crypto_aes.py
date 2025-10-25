@@ -19,8 +19,6 @@ def deriveKey(password: bytes, iv: bytes, pbkdf_iteration_count: int):
     salt_pre_hash_bytes = password + application_name + iv
     salt = sha256(salt_pre_hash_bytes).digest()
     iteration_count = pbkdf_iteration_count + len(password) + iv[0]
-    # print("[Debug] Salt:", salt.hex())
-    # print(iteration_count)
 
     return pbkdf2_hmac("sha256", password, salt, iteration_count, BITS_256)
 
