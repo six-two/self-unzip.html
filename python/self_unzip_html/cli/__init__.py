@@ -67,8 +67,6 @@ def main_encode(args):
     write_output_file(args, html_page)
 
 
-
-
 def main():
     try:
         main_wrapped()

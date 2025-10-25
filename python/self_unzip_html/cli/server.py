@@ -3,7 +3,8 @@
 from argparse import ArgumentParser
 import os
 import posixpath
-from urllib.parse import unquote
+from urllib.parse import unquote, quote
+import html
 from http.server import HTTPServer, BaseHTTPRequestHandler
 # local
 from . import Subcommand
@@ -19,7 +20,12 @@ def register_server_argument_parser(ap: ArgumentParser, subcommand: Subcommand):
     if subcommand == Subcommand.SERVE:
         ap_server = ap.add_argument_group("Server options")
         ap_server.add_argument("-b", "--bind", default="0.0.0.0", help="IP address to bind to (default: 0.0.0.0)")
+        ap_server.add_argument("-D", "--web-root", default=os.getcwd(), help="directory to serve using the web server (default: current directory)")
         ap_server.add_argument("port", nargs="?", type=int, default=8000, help="port to bind to (default: 8000)")
+
+
+class MaliciousRequestException(Exception):
+    pass
 
 class HTMLSmugglingServer(HTTPServer):
     def __init__(self, server_address, RequestHandlerClass, args):
@@ -44,9 +50,7 @@ class HTMLSmugglingServer(HTTPServer):
 
         self.encryptor = get_encryptor(args)
 
-        # self.html_template = get_html_template(DEFAULT_TEMPLATE_FILE, "File Download", "File download link should be shown immediately")
-        # self.svg_template = get_svg_template(DEFAULT_SVG_FILE)
-        # self.encryptor = NullEncryptor()
+        self.web_root = args.web_root
 
 
 class HTMLSmugglingRequestHandler(BaseHTTPRequestHandler):
@@ -54,20 +58,25 @@ class HTMLSmugglingRequestHandler(BaseHTTPRequestHandler):
         super().__init__(request, client_address, server)
 
     def do_GET(self):
-        # Translate the path to a local filesystem path
-        path = self.translate_path(self.path)
+        try:
+            # Translate the path to a local filesystem path
+            path = self.translate_path(self.path)
 
-        if os.path.isdir(path):
-            self.list_directory(path)
-        elif os.path.isfile(path):
-            if self.path.endswith("?html"):
-                self.serve_html(path)
-            elif self.path.endswith("?svg"):
-                self.serve_svg(path)
+            if os.path.isdir(path):
+                self.list_directory(path)
+            elif os.path.isfile(path):
+                if self.path.endswith("?html"):
+                    self.serve_html(path)
+                elif self.path.endswith("?svg"):
+                    self.serve_svg(path)
+                else:
+                    self.serve_plain(path)
             else:
-                self.serve_plain(path)
-        else:
-            self.send_error(404, "File not found")
+                self.send_error(404, "File not found")
+                print(f"[-] Failed to access file '{path}'. Request URL path: '{self.path}'")
+        except MaliciousRequestException as ex:
+            self.send_error(403, "Forbidden", "Your request was categorized as malicious and blocked")
+            print(f"[-] Malicious request detected: {ex}")
 
     def serve_plain(self, path):
         file_name = os.path.basename(path)
@@ -130,39 +139,47 @@ class HTMLSmugglingRequestHandler(BaseHTTPRequestHandler):
         self.send_header("Content-type", "text/html; charset=utf-8")
         self.end_headers()
 
-        displaypath = unquote(self.path)
-        self.wfile.write(f"<!DOCTYPE html><html><head><title>Directory listing for {displaypath}</title></head>".encode())
-        self.wfile.write(f"<body><h2>Directory listing for {displaypath}</h2><ul>".encode())
+        # This code has some issues with special file names like a"'\"test %25.txt. If you name your file like that, it is your problem. I think it is because of the backslash, so lets print a warning
+        displaypath = "/" + self.sanitize_path(self.path)
+        self.wfile.write(f"<!DOCTYPE html><html><head><title>Directory listing for {html.escape(displaypath)}</title></head>".encode())
+        self.wfile.write(f"<body><h2>Directory listing for {html.escape(displaypath)}</h2><ul>".encode())
 
+        if displaypath != "/":
+            self.wfile.write(b'<li><a href="..">../</a></li>')
         for name in entries:
-            fullname = os.path.join(path, name)
-            href = posixpath.join(self.path, name)
+            fullname = os.path.join(displaypath, name)
             if os.path.isdir(fullname):
-                self.wfile.write(f'<li><a href="{href}">{name}/</a></li>'.encode())
+                self.wfile.write(f'<li><a href="{quote(fullname)}">{html.escape(fullname)}/</a></li>'.encode())
             else:
                 # Show direct, HTML and SVG links
-                self.wfile.write(f'<li><a href="{href}">{name}</a> (<a href="{href}?html">HTML</a>, <a href="{href}?svg">SVG</a>)</li>'.encode())
+                self.wfile.write(f'<li><a href="{quote(fullname)}">{html.escape(fullname)}</a> (<a href="{quote(fullname)}?html">HTML</a>, <a href="{quote(fullname)}?svg">SVG</a>)</li>'.encode())
 
         self.wfile.write(b"</ul></body></html>")
 
-    def translate_path(self, path):
+    def sanitize_path(self, path):
         # Remove query parameters and decode URL
-        path = unquote(path.split('?',1)[0].split('#',1)[0])
+        path = path.split('#',1)[0] # Remove anchor tag from URL
+        path = path.split('?',1)[0] # Remove parameters from URL
+        path = unquote(path)
+        # path = path.replace("\\", "/") # On linux files can have backslashes in their file name, so we should not escape this
         path = os.path.normpath(path)
-        words = path.strip('/').split('/')
-        base_path = os.getcwd()
-        for word in words:
-            if word in ('.', '..'): # Is this how ChatGPT thinks path traversal is prevented? @TODO: check
-                continue
-            base_path = os.path.join(base_path, word)
-        return base_path
+
+        if ".." in path:
+            raise MaliciousRequestException("Path traversal payload in ")
+
+        return path.lstrip("/")
+
+
+    def translate_path(self, path):
+        rel_path = self.sanitize_path(path)
+        return os.path.join(self.server.web_root, rel_path)
 
 
 def start_server(bind_ip: str, bind_port: int, args):
     try:
         server_address = (bind_ip, bind_port)
         httpd = HTMLSmugglingServer(server_address, HTMLSmugglingRequestHandler, args)
-        print(f"Serving at http://{bind_ip}:{bind_port}")
+        print(f"[*] Serving {os.path.abspath(args.web_root)} at http://{bind_ip}:{bind_port}")
         httpd.serve_forever()
     except KeyboardInterrupt:
         # Allow Ctrl-C without traceback
