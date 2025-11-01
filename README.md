@@ -198,6 +198,7 @@ The rest of the project is under the MIT license, so you can do whatever as long
 
 ### HEAD
 
+- Added options for specifying output file names and paths for `--copy-base64` and `--copy-text`. Example usage: `--linux-path /tmp/ --mac-path /tmp/ --windows-path C:\\\\Temp\\\\`
 - Removed textarea from `--copy-base64` due to page crashes / reloads with big payloads. To get the textarea instead of the copy button, use the new `--show-base64` flag.
 
 

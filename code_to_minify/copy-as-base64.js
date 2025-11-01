@@ -21,9 +21,9 @@ function handle_base64(base64) {
     doc.write(
         '<style>textarea {width: 100%;}</style>'
         + '<h1>{{NAME}}</h1><button>copy as base64</button>'
-        + '<h2>Decode on Windows (PowerShell)</h2><textarea>[IO.File]::WriteAllBytes("{{NAME}}", [Convert]::FromBase64String((Get-Clipboard)))</textarea>'
-        + '<h2>Decode on Linux</h2><textarea>xclip --out --selection clipboard | base64 -d > {{NAME}}</textarea>'
-        + '<h2>Decode on macOS</h2><textarea>pbpaste | base64 -d > {{NAME}}</textarea>'
+        + '<h2>Decode on Windows (PowerShell)</h2><textarea>[IO.File]::WriteAllBytes("{{WINDOWS_PATH}}", [Convert]::FromBase64String((Get-Clipboard)))</textarea>'
+        + '<h2>Decode on Linux</h2><textarea>xclip --out --selection clipboard | base64 -d > {{LINUX_PATH}}</textarea>'
+        + '<h2>Decode on macOS</h2><textarea>pbpaste | base64 -d > {{MAC_PATH}}</textarea>'
     );
 
     let setButtonText = (button, text) => {

@@ -1,6 +1,7 @@
 from argparse import ArgumentParser
 from typing import Any
 from html import escape
+import os
 # local
 from . import Subcommand
 from ..static_js import JS_DOWNLOAD_LINK, JS_DOWNLOAD_AUTO, JS_DOWNLOAD_SVG, JS_DRIVEBY_REDIRECT, JS_DRIVEBY_REDIRECT_SVG, JS_EVAL, JS_REPLACE, JS_SHOW_TEXT, JS_SHOW_TEXT_SVG, JS_COPY_TEXT
@@ -28,10 +29,38 @@ def register_action_argument_parser(ap: ArgumentParser, subcommand: Subcommand):
         payload_option_mutex.add_argument("--show-text", action="store_true", help="use this to show plain text. Unlike --replace this does not interpret HTML tags and does not change whitespace")
         payload_option_mutex.add_argument("--driveby-redirect", metavar="REDIRECT_URL", help="downlaod the payload as a file in the background and immediately redirect the user to another site. Useful for phishing")
         payload_option_mutex.add_argument("--custom", metavar="YOUR_JAVASCRIPT_CODE", help="run your own action. Provide a JavaScript snippet that uses the decoded payload, which is stored in the 'og_data' variable. Note that data is a byte array, so you likely want to use 'new TextDecoder().decode(og_data)' to convert it to Unicode")
+
+        payload_option_visual_group.add_argument("--linux-path", default="", help="for payloads like --copy-base64 store the output file at the given location. If it ends in a '/', the original file name is added")
+        payload_option_visual_group.add_argument("--mac-path", default="", help="for payloads like --copy-base64 store the output file at the given location. If it ends in a '/', the original file name is added")
+        payload_option_visual_group.add_argument("--windows-path", default="", help="for payloads like --copy-base64 store the output file at the given location. If it ends in a '/', the original file name is added")
         payload_option_visual_group.add_argument("--obscure-action", action="store_true", help="obscures the action JavaScript code")
     else:
         ap.add_argument("--obscure-action", action="store_true", help="obscures the action JavaScript code")
 
+def get_base64_path(custom_path: str, file_name: str) -> str:
+    if custom_path:
+        if custom_path.endswith("/") or custom_path.endswith("\\"):
+            # Custom path is a directory like /tmp/, append the original name of the input file
+            return custom_path + file_name
+        else:
+            # Custom path is a specific file like /tmp/exploit.so
+            return custom_path
+    else:
+        # No custom path specified, just store it in the local directory
+        return file_name
+
+def replace_base64_placeholders(args: Any, javascript: str, file_name: str) -> str:
+    linux_path = get_base64_path(args.linux_path, file_name)
+    javascript = javascript.replace("{{LINUX_PATH}}", escape(linux_path))
+
+    mac_path = get_base64_path(args.mac_path, file_name)
+    javascript = javascript.replace("{{MAC_PATH}}", escape(mac_path))
+
+    windows_path = get_base64_path(args.windows_path, file_name)
+    javascript = javascript.replace("{{WINDOWS_PATH}}", escape(windows_path))
+
+    javascript = javascript.replace("{{NAME}}", escape(file_name))
+    return javascript
 
 def get_javascript(args: Any, file_name: str, is_svg: bool) -> str:
     if args.download_link != None:
@@ -50,11 +79,11 @@ def get_javascript(args: Any, file_name: str, is_svg: bool) -> str:
     elif args.copy_text:
         return JS_COPY_TEXT.replace("{{NAME}}", escape(file_name))
     elif args.copy_base64:
-        return COPY_BASE64.replace("{{NAME}}", escape(file_name))
+        return replace_base64_placeholders(args, COPY_BASE64, file_name)
     elif args.show_text:
         return JS_SHOW_TEXT_SVG if is_svg else JS_SHOW_TEXT
     elif args.show_base64:
-        return SHOW_BASE64.replace("{{NAME}}", escape(file_name))
+        return replace_base64_placeholders(args, SHOW_BASE64, file_name)
     elif args.driveby_redirect != None:
         base_code = JS_DRIVEBY_REDIRECT_SVG if is_svg else JS_DRIVEBY_REDIRECT
         return base_code.replace("{{REDIRECT_URL}}", args.driveby_redirect).replace("{{NAME}}", file_name)
