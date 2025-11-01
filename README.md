@@ -198,7 +198,7 @@ The rest of the project is under the MIT license, so you can do whatever as long
 
 ### HEAD
 
-- Removed textarea from `--copy-base64` due to page crashes / reloads with big payloads
+- Removed textarea from `--copy-base64` due to page crashes / reloads with big payloads. To get the textarea instead of the copy button, use the new `--show-base64` flag.
 
 
 ### Version 0.3.0

@@ -4,7 +4,7 @@ from html import escape
 # local
 from . import Subcommand
 from ..static_js import JS_DOWNLOAD_LINK, JS_DOWNLOAD_AUTO, JS_DOWNLOAD_SVG, JS_DRIVEBY_REDIRECT, JS_DRIVEBY_REDIRECT_SVG, JS_EVAL, JS_REPLACE, JS_SHOW_TEXT, JS_SHOW_TEXT_SVG, JS_COPY_TEXT
-from ..minified_js import COPY_BASE64
+from ..minified_js import COPY_BASE64, SHOW_BASE64
 
 NO_ARG="NO_ARGUMENT_SUPPLIED"
 
@@ -22,6 +22,8 @@ def register_action_argument_parser(ap: ArgumentParser, subcommand: Subcommand):
             payload_option_mutex.add_argument("--replace", action="store_true", help="replace the page's content with the payload. Use this to compress HTML pages")
             payload_option_mutex.add_argument("--copy-text", action="store_true", help="show a button that copies the file to the clipboard")
             payload_option_mutex.add_argument("--copy-base64", action="store_true", help="show a button that copies the file as base64 to the clipboard and show decoding commands")
+            payload_option_mutex.add_argument("--show-base64", action="store_true", help="show file encoded as base64 and commands to decode it")
+
 
         payload_option_mutex.add_argument("--show-text", action="store_true", help="use this to show plain text. Unlike --replace this does not interpret HTML tags and does not change whitespace")
         payload_option_mutex.add_argument("--driveby-redirect", metavar="REDIRECT_URL", help="downlaod the payload as a file in the background and immediately redirect the user to another site. Useful for phishing")
@@ -51,6 +53,8 @@ def get_javascript(args: Any, file_name: str, is_svg: bool) -> str:
         return COPY_BASE64.replace("{{NAME}}", escape(file_name))
     elif args.show_text:
         return JS_SHOW_TEXT_SVG if is_svg else JS_SHOW_TEXT
+    elif args.show_base64:
+        return SHOW_BASE64.replace("{{NAME}}", escape(file_name))
     elif args.driveby_redirect != None:
         base_code = JS_DRIVEBY_REDIRECT_SVG if is_svg else JS_DRIVEBY_REDIRECT
         return base_code.replace("{{REDIRECT_URL}}", args.driveby_redirect).replace("{{NAME}}", file_name)

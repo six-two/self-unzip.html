@@ -39,3 +39,8 @@ COPY_BASE64 = """async function f(){const e=new Blob([og_data]),a=new FileReader
 function h(e){let a=document.open();a.write('\x3cstyle\x3etextarea {width: 100%;}\x3c/style\x3e\x3ch1\x3e{{NAME}}\x3c/h1\x3e\x3cbutton\x3ecopy as base64\x3c/button\x3e\x3ch2\x3eDecode on Windows (PowerShell)\x3c/h2\x3e\x3ctextarea\x3e[IO.File]::WriteAllBytes("{{NAME}}", [Convert]::FromBase64String((Get-Clipboard)))\x3c/textarea\x3e\x3ch2\x3eDecode on Linux\x3c/h2\x3e\x3ctextarea\x3exclip --out --selection clipboard | base64 -d \x3e {{NAME}}\x3c/textarea\x3e\x3ch2\x3eDecode on macOS\x3c/h2\x3e\x3ctextarea\x3epbpaste | base64 -d \x3e {{NAME}}\x3c/textarea\x3e');let c=
 (d,k)=>{d.textContent=k;setTimeout(()=>d.textContent="copy as base64",2E3)},b=a.querySelector("button");b.onclick=()=>{navigator.clipboard.writeText(e).then(()=>c(b,"copied")).catch(d=>{console.error(d);c(b,"copy failed")})}}setTimeout(()=>f().then(h),50);
 """
+
+SHOW_BASE64 = """async function c(){const b=new Blob([og_data]),a=new FileReader;return new Promise((d,e)=>{a.onload=()=>{d(a.result.split(",")[1])};a.onerror=e;a.readAsDataURL(b)})}
+function f(b){document.open().write('\x3cstyle\x3etextarea {width: 100%;}\x3c/style\x3e\x3ch1\x3e{{NAME}}\x3c/h1\x3e\x3ch2\x3eDecode on Windows (PowerShell)\x3c/h2\x3e\x3ctextarea\x3e[IO.File]::WriteAllBytes("{{NAME}}", [Convert]::FromBase64String((Get-Clipboard)))\x3c/textarea\x3e\x3ch2\x3eDecode on Linux\x3c/h2\x3e\x3ctextarea\x3exclip --out --selection clipboard | base64 -d \x3e {{NAME}}\x3c/textarea\x3e\x3ch2\x3eDecode on macOS\x3c/h2\x3e\x3ctextarea\x3epbpaste | base64 -d \x3e {{NAME}}\x3c/textarea\x3e\x3ch2\x3eBase64 to copy\x3c/h2\x3e\x3ctextarea id\x3dbase64 rows\x3d20\x3e'+b+
+"\x3c/textarea\x3e")}setTimeout(()=>c().then(f),50);
+"""

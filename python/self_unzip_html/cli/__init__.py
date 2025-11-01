@@ -50,6 +50,7 @@ def main_wrapped() -> None:
     add_if_does_not_exist(args, "download_link", None)
     add_if_does_not_exist(args, "copy_base64", False)
     add_if_does_not_exist(args, "copy_text", False)
+    add_if_does_not_exist(args, "show_base64", False)
 
     if not args.quiet:
         global PRINT_INFO_MESSAGES
