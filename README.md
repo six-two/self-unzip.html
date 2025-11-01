@@ -196,6 +196,11 @@ The rest of the project is under the MIT license, so you can do whatever as long
 
 ## Notable changes
 
+### HEAD
+
+- Removed textarea from `--copy-base64` due to page crashes / reloads with big payloads
+
+
 ### Version 0.3.0
 
 - **Breaking change**: Removed `self-unzip-html.py` script, use `self-unzip-html` instead.

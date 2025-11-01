@@ -1,4 +1,6 @@
 // IMPORTANT NOTE: After compiling the code, replace the 'window.something' (usually it was 'window.g') with 'og_data'. Also remove the 'use strict' at the beginning.
+// Basically just paste it into https://jscompressor.treblereel.dev/, select "Advanced", copy the output and post process it with the following (use xclip instead of pbpaste/pbcopy on linux):
+// pbpaste | sed -e "s/.*'use strict';//" -e "s/window.g/og_data/" -e 's/[[:space:]]*$//' | pbcopy
 
 async function uint8ToBase64Async(uint8Array) {
   const blob = new Blob([uint8Array]);
@@ -22,7 +24,6 @@ function handle_base64(base64) {
         + '<h2>Decode on Windows (PowerShell)</h2><textarea>[IO.File]::WriteAllBytes("{{NAME}}", [Convert]::FromBase64String((Get-Clipboard)))</textarea>'
         + '<h2>Decode on Linux</h2><textarea>xclip --out --selection clipboard | base64 -d > {{NAME}}</textarea>'
         + '<h2>Decode on macOS</h2><textarea>pbpaste | base64 -d > {{NAME}}</textarea>'
-        + '<h2>Text for manual copy</h2><textarea id=base64 rows=20>Loading...</textarea>'
     );
 
     let setButtonText = (button, text) => {
@@ -36,7 +37,6 @@ function handle_base64(base64) {
           .then(() => setButtonText(button, "copied"))
           .catch(e => {console.error(e); setButtonText(button, "copy failed")})
     };
-    doc.querySelector("#base64").value = base64;
 }
 
 setTimeout(()=>uint8ToBase64Async(window.og_data).then(handle_base64), 50);
