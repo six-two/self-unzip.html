@@ -2,10 +2,11 @@ node_modules/
 output/
 test_*.html
 .DS_Store
+# Those files are automatically built by the CI/CD pipeline
+docs/demos/
 # More test files for commands in README
 AnyDesk.exe
 anydesk-download.html
-PsExec.exe
 PsExec_.exe
 psexec.html
 psexec.svg
