@@ -1,5 +1,5 @@
 {
-    "outputDirectory": "site",
+    "outputDirectory": "web-version",
     "github": {
         "silent": true
     }
