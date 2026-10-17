@@ -3,7 +3,7 @@ import os
 import sys
 # local
 from . import Subcommand
-from ..page_builder import Compression, Encoding
+from ..page_builder import Compression, Encoding, CLICKFIX_TEMPLATE
 from ..util import print_info
 
 def register_output_argument_parser(ap: ArgumentParser, subcommand: Subcommand):
@@ -25,15 +25,20 @@ def read_input_file(args) -> tuple[bytes,str]:
     Returns file contents and file name as a tuple
     """
     try:
-        if args.input == "-":
+        if args.clickfix:
+            with open(CLICKFIX_TEMPLATE, "rb") as f:
+                clickfix_template = f.read().decode()
+            clickfix_template = clickfix_template.replace("xPAYLOADx", args.clickfix)
+            return clickfix_template.encode(), "cf.html"
+        elif args.input == "-":
             # Read the buffer to get data as binary
             return (sys.stdin.buffer.read(), "stdin.txt")
         else:
             file_name = os.path.basename(args.input)
             with open(args.input, "rb") as f:
                 return (f.read(), file_name)
-    except:
-        print(f"[!] Failed to load input file '{args.input}'")
+    except Exception as ex:
+        print(f"[!] Failed to load input file '{args.input}'. Cause: {ex}")
         exit(1)
 
 

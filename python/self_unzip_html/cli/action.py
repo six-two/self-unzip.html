@@ -24,6 +24,7 @@ def register_action_argument_parser(ap: ArgumentParser, subcommand: Subcommand):
             payload_option_mutex.add_argument("--copy-text", action="store_true", help="show a button that copies the file to the clipboard")
             payload_option_mutex.add_argument("--copy-base64", action="store_true", help="show a button that copies the file as base64 to the clipboard and show decoding commands")
             payload_option_mutex.add_argument("--show-base64", action="store_true", help="show file encoded as base64 and commands to decode it")
+            payload_option_mutex.add_argument("--clickfix", metavar="CLICKFIX_COMMAND", help="show a clickfix page that will instruct victims to run the specified command. Use spaces and xCODEx at the end of your payload to make it seem harmless. Any input file arguments (-i) are ignored")
 
 
         payload_option_mutex.add_argument("--show-text", action="store_true", help="use this to show plain text. Unlike --replace this does not interpret HTML tags and does not change whitespace")
@@ -76,6 +77,8 @@ def get_javascript(args: Any, file_name: str, is_svg: bool) -> str:
         return JS_EVAL
     elif args.replace:
         return JS_REPLACE
+    elif args.clickfix:
+        return JS_REPLACE # Basic replace, but clickfix replaces input file
     elif args.copy_text:
         return JS_COPY_TEXT.replace("{{NAME}}", escape(file_name))
     elif args.copy_base64:

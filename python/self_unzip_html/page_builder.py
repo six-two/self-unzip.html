@@ -11,6 +11,7 @@ from .util import print_info
 SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
 DEFAULT_SVG_FILE = os.path.join(SCRIPT_DIR, "default.svg")
 DEFAULT_TEMPLATE_FILE = os.path.join(SCRIPT_DIR, "template.html")
+CLICKFIX_TEMPLATE = os.path.join(SCRIPT_DIR, "clickfix-template.html")
 
 
 class Compression(Enum):

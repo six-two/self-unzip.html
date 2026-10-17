@@ -117,6 +117,21 @@ self-unzip-html html -i AnyDesk.exe -o anydesk-download.html --driveby-redirect 
 
 Host that HTML file on your server and link to it in your emails.
 
+#### Clickfix
+
+##### Simple clickfix
+
+This mode is tacked on to have a simple clickfix demo. It ignores the input file and instead uses a clickfix demo template based on https://github.com/JohnHammond/recaptcha-phish/blob/main/index.html, with the command you specify as part of the `--clickfix` flag. Basic usage looks like this:
+```bash
+self-unzip-html html --clickfix 'echo hello, your verification code is                xCODEx          ' -i '' -o test_clickfix.html
+```
+
+You can do the same manually, if you just modify the `clickfix-template.html` file, replace `xPAYLOADx` with your command to run and then to a manual replace action:
+```bash
+self-unzip-html html --replace -i your-modified-clickfix-templace-with-your-command.html -o test_clickfix.html
+```
+
+
 #### Encryption
 
 Encryption uses AES-GCM for encryption and tamper detection and PBKDF2 with slightly over 1 million rounds of SHA-256 for password derivation.
@@ -198,6 +213,7 @@ The rest of the project is under the MIT license, so you can do whatever as long
 
 ### HEAD
 
+- Added `--clickfix` action
 - Added options for specifying output file names and paths for `--copy-base64` and `--copy-text`. Example usage: `--linux-path /tmp/ --mac-path /tmp/ --windows-path C:\\\\Temp\\\\`
 - Removed textarea from `--copy-base64` due to page crashes / reloads with big payloads. To get the textarea instead of the copy button, use the new `--show-base64` flag.
 
