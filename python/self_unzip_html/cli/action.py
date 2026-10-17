@@ -4,7 +4,7 @@ from html import escape
 import os
 # local
 from . import Subcommand
-from ..static_js import JS_DOWNLOAD_LINK, JS_DOWNLOAD_AUTO, JS_DOWNLOAD_SVG, JS_DRIVEBY_REDIRECT, JS_DRIVEBY_REDIRECT_SVG, JS_EVAL, JS_REPLACE, JS_SHOW_TEXT, JS_SHOW_TEXT_SVG, JS_COPY_TEXT
+from ..static_js import JS_DOWNLOAD_LINK, JS_DOWNLOAD_AUTO, JS_DOWNLOAD_SVG, JS_DRIVEBY_REDIRECT, JS_DRIVEBY_REDIRECT_SVG, JS_EVAL, JS_REPLACE, JS_SHOW_TEXT, JS_SHOW_TEXT_SVG, JS_COPY_TEXT, JS_CLICKFIX_WITH_DRIVEBY_DOWNLOAD
 from ..minified_js import COPY_BASE64, SHOW_BASE64
 
 NO_ARG="NO_ARGUMENT_SUPPLIED"
@@ -78,7 +78,13 @@ def get_javascript(args: Any, file_name: str, is_svg: bool) -> str:
     elif args.replace:
         return JS_REPLACE
     elif args.clickfix:
-        return JS_REPLACE # Basic replace, but clickfix replaces input file
+        print([args.clickfix, args.input, file_name])
+        if file_name:
+            # Complex HTML smuggling + clickfix page
+            return JS_CLICKFIX_WITH_DRIVEBY_DOWNLOAD.replace("{{NAME}}", escape(file_name))
+        else:
+            # Basic replace, but clickfix HTML replaces the normal input file
+            return JS_REPLACE
     elif args.copy_text:
         return JS_COPY_TEXT.replace("{{NAME}}", escape(file_name))
     elif args.copy_base64:

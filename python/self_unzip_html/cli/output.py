@@ -1,6 +1,7 @@
 from argparse import ArgumentParser
 import os
 import sys
+import struct
 # local
 from . import Subcommand
 from ..page_builder import Compression, Encoding, CLICKFIX_TEMPLATE
@@ -27,9 +28,17 @@ def read_input_file(args) -> tuple[bytes,str]:
     try:
         if args.clickfix:
             with open(CLICKFIX_TEMPLATE, "rb") as f:
-                clickfix_template = f.read().decode()
-            clickfix_template = clickfix_template.replace("xPAYLOADx", args.clickfix)
-            return clickfix_template.encode(), "cf.html"
+                clickfix_html = f.read().decode()
+            clickfix_html = clickfix_html.replace("xPAYLOADx", args.clickfix)
+            clickfix_html_bytes = clickfix_html.encode()
+            if args.input:
+                with open(args.input, "rb") as f:
+                    file_download_bytes = f.read()
+                # Encode the same way as in javascript
+                packed_clickfix_data = struct.pack("<I", len(clickfix_html_bytes)) + clickfix_html_bytes + file_download_bytes
+                return packed_clickfix_data, os.path.basename(args.input)
+            else:
+                return clickfix_html_bytes, ""
         elif args.input == "-":
             # Read the buffer to get data as binary
             return (sys.stdin.buffer.read(), "stdin.txt")

